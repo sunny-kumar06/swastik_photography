@@ -131,35 +131,9 @@ npm run dev
 
 ---
 
-## 🔑 Default Admin Credentials
 
-- **Admin Login URL**: `http://localhost:5173/admin/login`
-- **Email**: `sk61398sny@gmail.com` (or `admin@swastikphotography.com`)
-- **Password**: `Swastik@Admin2026`
 
-*(Admin credentials can be modified anytime in Admin Settings)*
 
----
 
-## ⚙️ Environment Variables (`backend/.env`)
 
-```env
-PORT=5000
-NODE_ENV=development
-MONGO_URI=mongodb://127.0.0.1:27017/swastik_photography
-JWT_SECRET=swastik_photography_super_secret_jwt_key_2026
-
-# Cloudinary (Optional - curated CDN fallback is active)
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-
-# Email / SMTP (Optional - console preview active when empty)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=sk61398sny@gmail.com
-SMTP_PASS=your_gmail_app_password
-ADMIN_EMAIL=sk61398sny@gmail.com
-
-CLIENT_URL=http://localhost:5173
 ```
