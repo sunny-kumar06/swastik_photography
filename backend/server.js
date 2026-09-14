@@ -84,16 +84,19 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/contact', formLimiter, contactRoutes);
 app.use('/api/settings', settingsRoutes);
 
-// Frontend static serving (if frontend dist exists in repo)
-const frontendDist = path.join(__dirname, '../frontend/dist');
+// Frontend static serving (from public folder or frontend/dist)
 const fs = require('fs');
-if (fs.existsSync(frontendDist)) {
-  app.use(express.static(frontendDist));
+const publicFolder = path.join(__dirname, 'public');
+const distFolder = path.join(__dirname, '../frontend/dist');
+const staticDir = fs.existsSync(publicFolder) ? publicFolder : (fs.existsSync(distFolder) ? distFolder : null);
+
+if (staticDir) {
+  app.use(express.static(staticDir));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
       return next();
     }
-    res.sendFile(path.join(frontendDist, 'index.html'));
+    res.sendFile(path.join(staticDir, 'index.html'));
   });
 } else {
   // Root API Landing response
