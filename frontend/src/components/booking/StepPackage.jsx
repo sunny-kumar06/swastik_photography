@@ -3,6 +3,101 @@ import { motion } from 'framer-motion';
 import { Check, Sparkles, AlertCircle } from 'lucide-react';
 import { packagesApi } from '../../api/client';
 
+const defaultFallbackPackages = [
+  {
+    _id: 'pkg-default-1',
+    name: 'Wedding Basic',
+    category: 'Wedding',
+    price: 15000,
+    description: 'Ideal for intimate ceremonies or single-day wedding events.',
+    features: [
+      '1 Senior Candid Photographer',
+      '1 Traditional Videographer',
+      'Full Day Event Coverage',
+      'Up to 250 Color-Corrected High-Res Photos',
+      'HD Highlight Video (5-7 mins)',
+      'Standard Photo Book (20 Pages)',
+    ],
+    isPopular: false,
+  },
+  {
+    _id: 'pkg-default-2',
+    name: 'Wedding Premium',
+    category: 'Wedding',
+    price: 25000,
+    description: 'Our most requested signature coverage for grand wedding celebrations.',
+    features: [
+      '2 Senior Candid Photographers',
+      '2 Cinematic Videographers (4K Setup)',
+      'Drone Aerial Cinematography included',
+      'Pre-Wedding Short Session included',
+      '400+ Masterfully Retouched Photos',
+      'Cinematic Wedding Teaser + Full Wedding Film',
+      'Premium Leatherette Photobook (40 Pages)',
+    ],
+    isPopular: true,
+  },
+  {
+    _id: 'pkg-default-3',
+    name: 'Wedding Luxury',
+    category: 'Wedding',
+    price: 40000,
+    description: 'The pinnacle of bespoke royal photography for multi-day weddings.',
+    features: [
+      'Master Director + 3 Candid Photographers',
+      '3 Cinematic Filmmakers with Gimbal & Prime Rigs',
+      'Licensed FPV & 4K Drone Coverage',
+      'Full Pre-Wedding Concept Shoot with Teaser',
+      'Live Instagram Reels on Wedding Day',
+      'Unlimited High-Res Retouched Photographs',
+      'Luxury Hardcover Royal Album (60 Pages)',
+    ],
+    isPopular: false,
+  },
+  {
+    _id: 'pkg-default-4',
+    name: 'Pre-Wedding Romantic',
+    category: 'Pre-Wedding',
+    price: 18000,
+    description: 'Capture your love story in exotic scenic locations before tying the knot.',
+    features: [
+      'Full Day Shoot (2 Scenic Locations)',
+      'Up to 3 Outfit Changes',
+      'Drone Aerial Shots',
+      '50 High-End Magazine Retouched Images',
+      'Cinematic 3-Minute Love Story Video',
+    ],
+    isPopular: false,
+  },
+  {
+    _id: 'pkg-default-5',
+    name: 'Birthday & Family Gala',
+    category: 'Birthday',
+    price: 12000,
+    description: 'Full of vibrancy, fun, and natural laughter for your celebration.',
+    features: [
+      '4 Hours Continuous Coverage',
+      'Candid & Group Portraits',
+      'Cake Cutting Special Reel',
+      '150+ Color-Graded Photos',
+    ],
+    isPopular: false,
+  },
+  {
+    _id: 'pkg-default-6',
+    name: 'Signature Portrait Session',
+    category: 'Portrait',
+    price: 8000,
+    description: 'Editorial portrait session with precision lighting & retouched stills.',
+    features: [
+      'Studio or Outdoor Location',
+      'High-Resolution Retouched Photos',
+      'Fast Turnaround Delivery',
+    ],
+    isPopular: false,
+  },
+];
+
 const StepPackage = ({ eventType, selectedPackage, onSelect }) => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,16 +106,17 @@ const StepPackage = ({ eventType, selectedPackage, onSelect }) => {
     const fetchPackages = async () => {
       try {
         const res = await packagesApi.getAll();
-        if (res.data && res.data.data) {
-          // If packages exist for selected eventType, match or provide all
-          const allPkgs = res.data.data;
-          const matching = allPkgs.filter(
-            (p) => p.category.toLowerCase() === eventType.toLowerCase()
-          );
-          setPackages(matching.length > 0 ? matching : allPkgs);
-        }
+        const allPkgs = res.data?.data && res.data.data.length > 0 ? res.data.data : defaultFallbackPackages;
+        const matching = allPkgs.filter(
+          (p) => p.category?.toLowerCase() === (eventType || 'Wedding').toLowerCase()
+        );
+        setPackages(matching.length > 0 ? matching : allPkgs);
       } catch (err) {
-        console.error('[Booking packages fetch error]:', err.message);
+        console.warn('[Booking packages fetch warning, using defaults]:', err.message);
+        const matching = defaultFallbackPackages.filter(
+          (p) => p.category.toLowerCase() === (eventType || 'Wedding').toLowerCase()
+        );
+        setPackages(matching.length > 0 ? matching : defaultFallbackPackages);
       } finally {
         setLoading(false);
       }

@@ -23,34 +23,11 @@ const Settings = require('./models/Settings');
 
 const app = express();
 
-// Connect to Database
+// Connect to Database and Auto-Initialize defaults
 connectDB().then(async () => {
-  // Ensure default admin exists
   try {
-    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@swastikphotography.com').toLowerCase().trim();
-    const adminExists = await Admin.findOne({ email: adminEmail });
-    if (!adminExists) {
-      await Admin.create({
-        name: 'Swastik Admin',
-        email: adminEmail,
-        password: 'Swastik@Admin2026',
-        role: 'superadmin',
-      });
-      console.log(`[Auto-Init]: Admin initialized -> ${adminEmail} (Swastik@Admin2026)`);
-    }
-
-    // Ensure default settings exist
-    const settingsExist = await Settings.findOne();
-    if (!settingsExist) {
-      await Settings.create({
-        businessName: 'Swastik Photography',
-        tagline: 'Premium Photography & Cinematic Videography',
-        phone: '9608782890',
-        email: 'sk61398sny@gmail.com',
-        whatsapp: '9608782890',
-      });
-      console.log('[Auto-Init]: Initial settings registered.');
-    }
+    const { seedDefaultsIfEmpty } = require('./utils/seedData');
+    await seedDefaultsIfEmpty();
   } catch (initErr) {
     console.warn('[Auto-Init Warning]:', initErr.message);
   }
@@ -85,6 +62,9 @@ const formLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Ignore favicon requests
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
@@ -94,7 +74,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Mount Routes
+// Mount API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', formLimiter, bookingRoutes);
 app.use('/api/gallery', galleryRoutes);
@@ -103,6 +83,39 @@ app.use('/api/packages', packageRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/contact', formLimiter, contactRoutes);
 app.use('/api/settings', settingsRoutes);
+
+// Frontend static serving (if frontend dist exists in repo)
+const frontendDist = path.join(__dirname, '../frontend/dist');
+const fs = require('fs');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+} else {
+  // Root API Landing response
+  app.get('/', (req, res) => {
+    res.json({
+      status: 'online',
+      service: '📸 Swastik Photography API Server',
+      message: 'Backend server is running live and connected to MongoDB!',
+      endpoints: {
+        health: '/api/health',
+        bookings: '/api/bookings',
+        gallery: '/api/gallery',
+        services: '/api/services',
+        packages: '/api/packages',
+        settings: '/api/settings',
+        contact: '/api/contact',
+      },
+      clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+      timestamp: new Date().toISOString(),
+    });
+  });
+}
 
 // Error handlers
 app.use(notFound);

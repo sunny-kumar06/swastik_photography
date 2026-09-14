@@ -347,15 +347,16 @@ const seedDB = async () => {
           isFeatured: true,
         },
       ]);
-      console.log('[Seed]: Reviews seeded successfully');
-    }
-
     console.log('[Seed]: Database initialized successfully with all default data!');
-    process.exit(0);
+    return true;
   } catch (err) {
     console.error('[Seed Error]:', err);
-    process.exit(1);
+    return false;
   }
 };
 
-seedDB();
+if (require.main === module) {
+  seedDB().then(() => process.exit(0)).catch(() => process.exit(1));
+}
+
+module.exports = { seedDefaultsIfEmpty: seedDB };
