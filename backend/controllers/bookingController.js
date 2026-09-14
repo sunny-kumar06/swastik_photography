@@ -1,5 +1,6 @@
 const Booking = require('../models/Booking');
 const Gallery = require('../models/Gallery');
+const Contact = require('../models/Contact');
 const {
   sendBookingNotification,
   sendCustomerBookingConfirmation,

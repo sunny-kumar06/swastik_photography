@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit3, Image as ImageIcon, Sparkles, X, CheckCircle2, AlertCircle } from 'lucide-react';
-import { galleryApi } from '../../api/client';
+import { galleryApi, getMediaUrl } from '../../api/client';
 
 const categories = ['Wedding', 'Pre-Wedding', 'Birthday', 'Engagement', 'Portrait', 'Cinematic', 'Other'];
 
@@ -173,7 +173,7 @@ const AdminGallery = () => {
             >
               <div className="relative h-48 overflow-hidden bg-slate-950">
                 <img
-                  src={photo.imageUrl}
+                  src={getMediaUrl(photo.imageUrl)}
                   alt={photo.title}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"

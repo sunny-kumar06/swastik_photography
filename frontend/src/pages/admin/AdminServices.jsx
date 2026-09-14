@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit3, Trash2, Check, X, CheckCircle2, AlertCircle } from 'lucide-react';
-import { servicesApi } from '../../api/client';
+import { servicesApi, getMediaUrl } from '../../api/client';
 
 const AdminServices = () => {
   const [services, setServices] = useState([]);
@@ -180,7 +180,7 @@ const AdminServices = () => {
               }`}
             >
               <div className="relative h-44 overflow-hidden">
-                <img src={srv.image} alt={srv.title} className="w-full h-full object-cover" />
+                <img src={getMediaUrl(srv.image)} alt={srv.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-brand-card to-transparent" />
                 <div className="absolute top-3 left-3">
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-black/70 text-amber-400 border border-amber-400/30">

@@ -4,6 +4,21 @@ const rawApiUrl = import.meta.env.VITE_API_URL || '/api';
 const cleanBaseUrl = rawApiUrl.endsWith('/') ? rawApiUrl.slice(0, -1) : rawApiUrl;
 const baseURL = cleanBaseUrl.includes('/api') ? cleanBaseUrl : `${cleanBaseUrl}/api`;
 
+// The base host for static assets like /uploads
+export const API_ROOT = cleanBaseUrl.replace(/\/api\/?$/, '');
+
+/**
+ * Utility to ensure uploaded and external image URLs resolve correctly across Vercel & Render
+ */
+export const getMediaUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+    return url;
+  }
+  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  return `${API_ROOT}${cleanPath}`;
+};
+
 const api = axios.create({
   baseURL,
   headers: {

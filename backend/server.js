@@ -23,6 +23,9 @@ const Settings = require('./models/Settings');
 
 const app = express();
 
+// Trust proxy for reverse proxies (Render, Vercel, Heroku) so req.ip and rate limiters work properly
+app.set('trust proxy', 1);
+
 // Connect to Database and Auto-Initialize defaults
 connectDB().then(async () => {
   try {
@@ -37,13 +40,19 @@ connectDB().then(async () => {
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
+    crossOriginOpenerPolicy: false,
   })
 );
 
 app.use(
   cors({
-    origin: '*',
+    origin: (origin, callback) => {
+      // Allow all origins (including null, localhost, Vercel preview & prod URLs, Render)
+      callback(null, true);
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   })
 );
 
@@ -52,15 +61,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static uploads folder for images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Rate limiters for public forms to prevent flooding
-const formLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // Limit each IP to 30 submissions per 15 mins
-  message: { success: false, message: 'Too many requests from this IP. Please try again later.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 // Ignore favicon requests
 app.get('/favicon.ico', (req, res) => res.status(204).end());
@@ -76,12 +76,12 @@ app.get('/api/health', (req, res) => {
 
 // Mount API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/bookings', formLimiter, bookingRoutes);
+app.use('/api/bookings', bookingRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/packages', packageRoutes);
 app.use('/api/reviews', reviewRoutes);
-app.use('/api/contact', formLimiter, contactRoutes);
+app.use('/api/contact', contactRoutes);
 app.use('/api/settings', settingsRoutes);
 
 // Frontend static serving (from public folder or frontend/dist)
