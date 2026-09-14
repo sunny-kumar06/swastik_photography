@@ -347,6 +347,9 @@ const seedDB = async () => {
           isFeatured: true,
         },
       ]);
+      console.log('[Seed]: Reviews seeded successfully');
+    }
+
     console.log('[Seed]: Database initialized successfully with all default data!');
     return true;
   } catch (err) {
