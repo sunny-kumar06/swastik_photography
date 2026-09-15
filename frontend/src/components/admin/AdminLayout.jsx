@@ -12,7 +12,6 @@ import {
   LogOut,
   Menu,
   ExternalLink,
-  ChevronLeft,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -58,24 +57,13 @@ const AdminLayout = () => {
       >
         <div>
           {/* Brand Header */}
-          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-            <div>
-              <span className="text-xs uppercase tracking-[0.25em] text-brand-accent font-bold block">
-                Management
-              </span>
-              <h1 className="text-lg font-cinematic font-black text-white tracking-wider truncate">
-                {settings.businessName || 'SWASTIK'}
-              </h1>
-            </div>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden px-3 py-1.5 rounded-full text-slate-300 hover:text-white bg-slate-800/90 hover:bg-slate-700 border border-slate-700/70 transition-all flex items-center space-x-1.5 text-xs font-semibold shadow-sm"
-              aria-label="Close navigation menu"
-              title="Close navigation menu"
-            >
-              <ChevronLeft className="w-4 h-4 text-brand-accent" />
-              <span>Close</span>
-            </button>
+          <div className="p-6 border-b border-slate-800">
+            <span className="text-xs uppercase tracking-[0.25em] text-brand-accent font-bold block">
+              Management
+            </span>
+            <h1 className="text-lg font-cinematic font-black text-white tracking-wider truncate">
+              {settings.businessName || 'SWASTIK'}
+            </h1>
           </div>
 
           {/* Navigation Links */}
