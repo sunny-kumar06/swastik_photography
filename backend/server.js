@@ -65,6 +65,7 @@ app.use(
   (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
     next();
   },
   express.static(path.join(__dirname, 'uploads'))

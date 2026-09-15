@@ -82,6 +82,11 @@ const Lightbox = ({ isOpen, photos, currentIndex, onClose, onPrev, onNext }) => 
             src={getMediaUrl(currentPhoto.imageUrl)}
             alt={currentPhoto.title || 'Swastik Photography Showcase'}
             className="max-h-[62vh] sm:max-h-[75vh] max-w-full object-contain rounded-lg shadow-2xl border border-slate-800"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src =
+                'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1200&auto=format&fit=crop';
+            }}
           />
 
           {/* Photo Info Caption */}

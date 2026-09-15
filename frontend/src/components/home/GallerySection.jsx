@@ -126,6 +126,11 @@ const GallerySection = () => {
                       alt={photo.title}
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                       loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src =
+                          'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=800&auto=format&fit=crop';
+                      }}
                     />
 
                     {/* Dark gradient overlay (always visible on touch mobile, on hover for desktop) */}

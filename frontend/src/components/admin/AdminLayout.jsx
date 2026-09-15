@@ -11,7 +11,6 @@ import {
   Settings,
   LogOut,
   Menu,
-  X,
   ExternalLink,
   ChevronLeft,
 } from 'lucide-react';
@@ -70,12 +69,12 @@ const AdminLayout = () => {
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden px-2.5 py-1.5 rounded-lg text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition-colors flex items-center space-x-1 text-xs font-semibold"
-              aria-label="Close menu"
-              title="Close menu"
+              className="lg:hidden px-3 py-1.5 rounded-full text-slate-300 hover:text-white bg-slate-800/90 hover:bg-slate-700 border border-slate-700/70 transition-all flex items-center space-x-1.5 text-xs font-semibold shadow-sm"
+              aria-label="Close navigation menu"
+              title="Close navigation menu"
             >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Back</span>
+              <ChevronLeft className="w-4 h-4 text-brand-accent" />
+              <span>Close</span>
             </button>
           </div>
 
