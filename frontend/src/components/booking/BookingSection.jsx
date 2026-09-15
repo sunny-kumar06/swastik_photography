@@ -43,12 +43,10 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
       return;
     }
     if (currentStep === 3) {
-      if (!bookingData.eventDate) {
-        setErrorMsg('Please select a valid date for your event.');
-        return;
-      }
-      if (!bookingData.eventTimeSlot) {
-        setErrorMsg('Please select an available time slot. If this date is already booked, please select an alternative date.');
+      if (!bookingData.eventDate || !bookingData.eventTimeSlot) {
+        setErrorMsg(
+          'This date is already booked. Please choose another date, or contact the admin with a query message to get a reply within 24 hours.'
+        );
         return;
       }
     }
@@ -179,9 +177,24 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
         {/* Step Container Card */}
         <div className="p-4 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl bg-brand-card/90 border border-slate-800 shadow-2xl backdrop-blur-md">
           {errorMsg && (
-            <div className="p-4 rounded-xl mb-6 bg-rose-950/70 border border-rose-500 text-rose-200 text-xs sm:text-sm flex items-center space-x-3">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-400" />
-              <span>{errorMsg}</span>
+            <div className="p-4 rounded-xl mb-6 bg-rose-950/70 border border-rose-500 text-rose-200 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg animate-fadeIn">
+              <div className="flex items-center space-x-3">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-400" />
+                <span className="leading-relaxed">{errorMsg}</span>
+              </div>
+              {errorMsg.includes('admin') && (
+                <a
+                  href="#contact"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs uppercase tracking-wider whitespace-nowrap self-start sm:self-auto transition-all shadow-sm flex items-center space-x-1"
+                >
+                  <span>Query Admin</span>
+                  <span>→</span>
+                </a>
+              )}
             </div>
           )}
 

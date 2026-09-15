@@ -197,10 +197,21 @@ const StepDateTime = ({ eventDate, eventTimeSlot, onChangeDate, onChangeSlot }) 
             <div className="p-4 rounded-2xl bg-rose-950/90 border border-rose-500 text-rose-200 text-xs flex items-start space-x-3 shadow-xl animate-fadeIn">
               <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-400 mt-0.5" />
               <div>
-                <h5 className="font-bold text-sm text-white">This Date is Already Booked!</h5>
+                <h5 className="font-bold text-sm text-white">This Date is Already Booked</h5>
                 <p className="mt-1 text-rose-300 leading-relaxed">
-                  Swastik Photography is fully reserved on this date. Please pick an alternative date on the calendar.
+                  This date is already booked. Please choose another date, or contact the admin with a query message to get a reply within 24 hours.
                 </p>
+                <a
+                  href="#contact"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="inline-flex items-center space-x-1.5 mt-2.5 px-3.5 py-1.5 rounded-lg bg-amber-500 text-black font-bold text-[11px] uppercase tracking-wider hover:bg-amber-400 transition-colors shadow-sm"
+                >
+                  <span>Write Query Message to Admin (Reply in 24h)</span>
+                  <span>→</span>
+                </a>
               </div>
             </div>
           )}
@@ -291,9 +302,21 @@ const StepDateTime = ({ eventDate, eventTimeSlot, onChangeDate, onChangeSlot }) 
           )}
 
           {eventTimeSlot && unavailableSlots.includes(eventTimeSlot) && (
-            <div className="p-3.5 rounded-xl bg-rose-950/70 border border-rose-500 text-xs text-rose-200 flex items-center space-x-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>This time slot is already booked. Please choose an available slot.</span>
+            <div className="p-3.5 rounded-xl bg-rose-950/70 border border-rose-500 text-xs text-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-md">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+                <span>This date is already booked. Please choose another date or write a query message to admin to get a reply within 24 hours.</span>
+              </div>
+              <a
+                href="#contact"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="px-2.5 py-1 rounded-lg bg-amber-500 text-black font-bold text-[10px] uppercase tracking-wider whitespace-nowrap self-start sm:self-auto hover:bg-amber-400 transition-colors"
+              >
+                Query Admin ↗
+              </a>
             </div>
           )}
         </div>
