@@ -157,6 +157,39 @@ const createBooking = async (req, res, next) => {
 // @desc    Check slot availability for a given date (Public)
 // @route   GET /api/bookings/check-availability?date=YYYY-MM-DD
 // @access  Public
+// Helper to calculate full unavailable slots based on booked slots
+const computeUnavailableSlots = (rawSlots) => {
+  const ALL_SLOTS = [
+    'Morning (08:00 AM - 01:00 PM)',
+    'Evening (04:00 PM - 10:00 PM)',
+    'Full Day (All Day Coverage)',
+  ];
+
+  const hasFullDay = rawSlots.includes('Full Day (All Day Coverage)');
+  const hasMorning = rawSlots.includes('Morning (08:00 AM - 01:00 PM)');
+  const hasEvening = rawSlots.includes('Evening (04:00 PM - 10:00 PM)');
+
+  if (hasFullDay || (hasMorning && hasEvening)) {
+    return {
+      unavailableSlots: ALL_SLOTS,
+      isFullyBooked: true,
+    };
+  }
+
+  const unavailable = new Set(rawSlots);
+  if (hasMorning || hasEvening) {
+    unavailable.add('Full Day (All Day Coverage)');
+  }
+
+  return {
+    unavailableSlots: Array.from(unavailable),
+    isFullyBooked: false,
+  };
+};
+
+// @desc    Check slot availability for a specific date (Public)
+// @route   GET /api/bookings/check-availability
+// @access  Public
 const checkSlotAvailability = async (req, res, next) => {
   try {
     const { date } = req.query;
@@ -168,14 +201,128 @@ const checkSlotAvailability = async (req, res, next) => {
     const bookedSlots = await Booking.find({
       eventDate: date,
       status: 'Confirmed',
-    }).select('eventTimeSlot');
+    }).select('eventTimeSlot customerName eventType isBlockedDate');
 
-    const unavailableSlots = bookedSlots.map((b) => b.eventTimeSlot);
+    const rawSlots = bookedSlots.map((b) => b.eventTimeSlot);
+    const { unavailableSlots, isFullyBooked } = computeUnavailableSlots(rawSlots);
 
     res.json({
       success: true,
       date,
       unavailableSlots,
+      isFullyBooked,
+      bookingsCount: bookedSlots.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all booked & reserved dates across upcoming months (Public)
+// @route   GET /api/bookings/booked-dates
+// @access  Public
+const getBookedDates = async (req, res, next) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const { startDate = today, months = 12 } = req.query;
+
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + Number(months));
+    const endDateStr = endDate.toISOString().split('T')[0];
+
+    const bookings = await Booking.find({
+      eventDate: { $gte: startDate, $lte: endDateStr },
+      status: 'Confirmed',
+    }).select('eventDate eventTimeSlot customerName eventType packageName isBlockedDate');
+
+    const dateMap = {};
+    for (const b of bookings) {
+      if (!dateMap[b.eventDate]) {
+        dateMap[b.eventDate] = {
+          date: b.eventDate,
+          rawSlots: [],
+          reasons: [],
+        };
+      }
+      dateMap[b.eventDate].rawSlots.push(b.eventTimeSlot);
+      const label = b.isBlockedDate
+        ? (b.customerName || 'Studio Reserved')
+        : `${b.eventType || 'Event'} Booking`;
+      dateMap[b.eventDate].reasons.push(label);
+    }
+
+    const bookedDates = Object.values(dateMap).map((d) => {
+      const { unavailableSlots, isFullyBooked } = computeUnavailableSlots(d.rawSlots);
+      return {
+        date: d.date,
+        unavailableSlots,
+        isFullyBooked,
+        reasons: d.reasons,
+      };
+    });
+
+    res.json({
+      success: true,
+      count: bookedDates.length,
+      bookedDates,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Admin manually block a date or slot (offline booking, studio off)
+// @route   POST /api/bookings/block-date
+// @access  Private (Admin)
+const blockDateByAdmin = async (req, res, next) => {
+  try {
+    const { date, slot = 'Full Day (All Day Coverage)', reason, notes } = req.body;
+
+    if (!date) {
+      return res.status(400).json({ success: false, message: 'Please specify the date to block' });
+    }
+
+    // Check if slot is already confirmed
+    const existingConfirmed = await Booking.findOne({
+      eventDate: date,
+      status: 'Confirmed',
+      $or: [
+        { eventTimeSlot: slot },
+        { eventTimeSlot: 'Full Day (All Day Coverage)' },
+        slot === 'Full Day (All Day Coverage)' ? { status: 'Confirmed' } : { eventTimeSlot: slot },
+      ],
+    });
+
+    if (existingConfirmed) {
+      return res.status(409).json({
+        success: false,
+        message: `This date/slot is already confirmed or blocked (${existingConfirmed.bookingReference} - ${existingConfirmed.customerName}).`,
+      });
+    }
+
+    const bookingReference = `BLK-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+    const blockedRecord = await Booking.create({
+      bookingReference,
+      eventType: 'Other',
+      packageId: null,
+      packageName: 'Studio Reserved Date',
+      packagePrice: 0,
+      eventDate: date,
+      eventTimeSlot: slot,
+      customerName: reason && reason.trim() ? reason.trim() : 'Studio Reserved by Admin',
+      customerPhone: '9608782890',
+      customerEmail: 'sk61398sny@gmail.com',
+      eventLocation: 'Studio / Reserved',
+      additionalMessage: notes ? notes.trim() : 'Admin blocked this date.',
+      status: 'Confirmed',
+      isBlockedDate: true,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Date ${date} has been blocked and marked as unavailable for clients.`,
+      data: blockedRecord,
     });
   } catch (error) {
     next(error);
@@ -364,6 +511,8 @@ const getDashboardStats = async (req, res, next) => {
 module.exports = {
   createBooking,
   checkSlotAvailability,
+  getBookedDates,
+  blockDateByAdmin,
   getAllBookings,
   getBookingById,
   updateBookingStatus,

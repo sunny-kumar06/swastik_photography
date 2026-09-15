@@ -14,10 +14,20 @@ import {
   MapPin,
   AlertCircle,
   CheckCircle2,
+  Lock,
+  Unlock,
+  Plus,
+  CalendarCheck,
 } from 'lucide-react';
 import { bookingsApi } from '../../api/client';
 
-const statusFilters = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled', 'Rejected'];
+const statusFilters = ['All', 'Confirmed', 'Pending', 'Blocked Dates', 'Completed', 'Cancelled', 'Rejected'];
+
+const timeSlotOptions = [
+  { id: 'Full Day (All Day Coverage)', label: 'Full Day (Entire Day Blocked)' },
+  { id: 'Morning (08:00 AM - 01:00 PM)', label: 'Morning Slot (08:00 AM - 01:00 PM)' },
+  { id: 'Evening (04:00 PM - 10:00 PM)', label: 'Evening Slot (04:00 PM - 10:00 PM)' },
+];
 
 const AdminBookings = () => {
   const [searchParams] = useSearchParams();
@@ -32,11 +42,23 @@ const AdminBookings = () => {
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
 
+  // Block Date Modal state
+  const [blockModalOpen, setBlockModalOpen] = useState(false);
+  const [submittingBlock, setSubmittingBlock] = useState(false);
+  const [blockForm, setBlockForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    slot: 'Full Day (All Day Coverage)',
+    reason: '',
+    notes: '',
+  });
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
   const fetchBookings = async () => {
     setLoading(true);
     try {
       const res = await bookingsApi.getAll({
-        status: activeFilter,
+        status: activeFilter === 'Blocked Dates' ? 'Confirmed' : activeFilter,
         search,
       });
       if (res.data && res.data.data) {
@@ -70,15 +92,46 @@ const AdminBookings = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to permanently delete this booking record?')) return;
+  const handleDelete = async (id, isBlocked = false) => {
+    const confirmPrompt = isBlocked
+      ? 'Are you sure you want to unblock this date? Clients will immediately be able to book this date on the website.'
+      : 'Are you sure you want to permanently delete this booking record?';
+
+    if (!window.confirm(confirmPrompt)) return;
+
     try {
       await bookingsApi.delete(id);
-      setActionSuccess('Booking deleted successfully.');
+      setActionSuccess(isBlocked ? 'Date unblocked successfully. Slot is now available for clients.' : 'Booking deleted successfully.');
       setSelectedBooking(null);
       fetchBookings();
     } catch (err) {
       setActionError(err.response?.data?.message || 'Failed to delete booking');
+    }
+  };
+
+  const handleBlockSubmit = async (e) => {
+    e.preventDefault();
+    setSubmittingBlock(true);
+    setActionError('');
+    setActionSuccess('');
+
+    try {
+      const res = await bookingsApi.blockDate(blockForm);
+      if (res.data && res.data.success) {
+        setActionSuccess(`Date ${blockForm.date} has been blocked successfully! It will now show as 'Already Booked' to clients.`);
+        setBlockModalOpen(false);
+        setBlockForm({
+          date: todayStr,
+          slot: 'Full Day (All Day Coverage)',
+          reason: '',
+          notes: '',
+        });
+        fetchBookings();
+      }
+    } catch (err) {
+      setActionError(err.response?.data?.message || 'Failed to block date');
+    } finally {
+      setSubmittingBlock(false);
     }
   };
 
@@ -90,8 +143,11 @@ const AdminBookings = () => {
     }).format(price || 0);
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
+  const getStatusBadge = (b) => {
+    if (b.isBlockedDate) {
+      return 'bg-purple-950 text-purple-300 border-purple-800';
+    }
+    switch (b.status) {
       case 'Confirmed':
         return 'bg-emerald-950 text-emerald-300 border-emerald-800';
       case 'Pending':
@@ -106,30 +162,57 @@ const AdminBookings = () => {
     }
   };
 
+  // Client-side filtering for Blocked Dates or specific statuses
+  const displayedBookings = bookings.filter((b) => {
+    if (activeFilter === 'Blocked Dates') return b.isBlockedDate === true;
+    if (activeFilter === 'Confirmed') return b.status === 'Confirmed' && !b.isBlockedDate;
+    return true;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-cinematic font-bold text-white tracking-wide">
-            Bookings & Reservations
+            Bookings & Date Management
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 font-light">
-            Monitor, approve, reschedule, or cancel customer photoshoot requests.
+            Manage customer reservations, view booked dates, and block off studio calendar dates in real time.
           </p>
+        </div>
+
+        <div className="flex items-center space-x-3 self-start sm:self-auto">
+          <button
+            onClick={() => setBlockModalOpen(true)}
+            className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-brand-accent hover:bg-rose-700 text-white text-xs font-bold uppercase tracking-wider shadow-glow-red transition-all"
+          >
+            <Lock className="w-4 h-4" />
+            <span>Block / Reserve Date</span>
+          </button>
         </div>
       </div>
 
       {actionSuccess && (
-        <div className="p-3.5 rounded-xl bg-emerald-950/70 border border-emerald-500 text-emerald-200 text-xs flex items-center space-x-2">
-          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-          <span>{actionSuccess}</span>
+        <div className="p-3.5 rounded-xl bg-emerald-950/70 border border-emerald-500 text-emerald-200 text-xs flex items-center justify-between animate-fadeIn">
+          <div className="flex items-center space-x-2">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <span>{actionSuccess}</span>
+          </div>
+          <button onClick={() => setActionSuccess('')} className="p-1 text-slate-400 hover:text-white">
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 
       {actionError && (
-        <div className="p-3.5 rounded-xl bg-rose-950/70 border border-rose-500 text-rose-200 text-xs flex items-center space-x-2">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{actionError}</span>
+        <div className="p-3.5 rounded-xl bg-rose-950/70 border border-rose-500 text-rose-200 text-xs flex items-center justify-between animate-fadeIn">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{actionError}</span>
+          </div>
+          <button onClick={() => setActionError('')} className="p-1 text-slate-400 hover:text-white">
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 
@@ -153,13 +236,14 @@ const AdminBookings = () => {
             <button
               key={st}
               onClick={() => setActiveFilter(st)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors flex items-center space-x-1 ${
                 activeFilter === st
                   ? 'bg-brand-accent text-white shadow-glow-red'
                   : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
               }`}
             >
-              {st}
+              {st === 'Blocked Dates' && <Lock className="w-3 h-3" />}
+              <span>{st}</span>
             </button>
           ))}
         </div>
@@ -168,12 +252,17 @@ const AdminBookings = () => {
       {/* Bookings Table / List */}
       <div className="rounded-2xl bg-brand-card border border-slate-800 overflow-hidden shadow-xl">
         {loading ? (
-          <div className="p-12 text-center text-slate-400 text-sm">
-            Loading reservations...
+          <div className="p-12 text-center text-slate-400 text-sm animate-pulse">
+            Loading reservations and calendar slots...
           </div>
-        ) : bookings.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 text-sm">
-            No bookings found matching your search and filter criteria.
+        ) : displayedBookings.length === 0 ? (
+          <div className="p-12 text-center text-slate-500 text-sm space-y-2">
+            <p>No bookings or blocked dates found matching your criteria.</p>
+            {activeFilter === 'Blocked Dates' && (
+              <p className="text-xs text-slate-400">
+                Click "Block / Reserve Date" to manually reserve a day or lock it for offline events.
+              </p>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -181,7 +270,7 @@ const AdminBookings = () => {
               <thead className="bg-slate-900/80 border-b border-slate-800 text-slate-400 uppercase tracking-wider font-semibold">
                 <tr>
                   <th className="py-3.5 px-4">Booking Ref</th>
-                  <th className="py-3.5 px-4">Customer</th>
+                  <th className="py-3.5 px-4">Client / Reason</th>
                   <th className="py-3.5 px-4">Event & Package</th>
                   <th className="py-3.5 px-4">Date & Slot</th>
                   <th className="py-3.5 px-4">Status</th>
@@ -189,36 +278,48 @@ const AdminBookings = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {bookings.map((b) => (
+                {displayedBookings.map((b) => (
                   <tr key={b._id} className="hover:bg-slate-900/40 transition-colors">
                     <td className="py-3.5 px-4 font-mono font-bold text-amber-400">
                       {b.bookingReference}
                     </td>
+
                     <td className="py-3.5 px-4">
                       <div className="font-semibold text-white">{b.customerName}</div>
-                      <div className="text-slate-400 text-[11px]">{b.customerPhone}</div>
+                      <div className="text-slate-400 text-[11px]">
+                        {b.isBlockedDate ? (
+                          <span className="text-purple-400 font-medium">Studio Calendar Block</span>
+                        ) : (
+                          b.customerPhone
+                        )}
+                      </div>
                     </td>
+
                     <td className="py-3.5 px-4">
                       <div className="text-slate-200 font-medium">{b.eventType}</div>
                       <div className="text-slate-400 text-[11px]">
-                        {b.packageName} ({formatPrice(b.packagePrice)})
+                        {b.packageName} {b.packagePrice > 0 ? `(${formatPrice(b.packagePrice)})` : ''}
                       </div>
                     </td>
+
                     <td className="py-3.5 px-4">
-                      <div className="text-white font-medium">{b.eventDate}</div>
+                      <div className="text-white font-mono font-bold">{b.eventDate}</div>
                       <div className="text-amber-400/80 text-[11px] truncate max-w-[160px]">
                         {b.eventTimeSlot}
                       </div>
                     </td>
+
                     <td className="py-3.5 px-4">
                       <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border ${getStatusBadge(
-                          b.status
+                        className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border ${getStatusBadge(
+                          b
                         )}`}
                       >
-                        {b.status}
+                        {b.isBlockedDate && <Lock className="w-2.5 h-2.5" />}
+                        <span>{b.isBlockedDate ? 'Studio Blocked' : b.status}</span>
                       </span>
                     </td>
+
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end space-x-1.5">
                         <button
@@ -228,31 +329,46 @@ const AdminBookings = () => {
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
-                        {b.status !== 'Confirmed' && (
+
+                        {b.isBlockedDate ? (
                           <button
-                            onClick={() => handleStatusChange(b._id, 'Confirmed')}
-                            className="p-1.5 rounded-lg bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300"
-                            title="Confirm Booking"
+                            onClick={() => handleDelete(b._id, true)}
+                            className="p-1.5 rounded-lg bg-purple-900/60 hover:bg-purple-800 text-purple-300"
+                            title="Unblock this Date (make available to clients)"
                           >
-                            <Check className="w-3.5 h-3.5" />
+                            <Unlock className="w-3.5 h-3.5" />
                           </button>
+                        ) : (
+                          <>
+                            {b.status !== 'Confirmed' && (
+                              <button
+                                onClick={() => handleStatusChange(b._id, 'Confirmed')}
+                                className="p-1.5 rounded-lg bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300"
+                                title="Confirm Booking"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+
+                            {b.status !== 'Rejected' && (
+                              <button
+                                onClick={() => handleStatusChange(b._id, 'Rejected')}
+                                className="p-1.5 rounded-lg bg-rose-900/60 hover:bg-rose-800 text-rose-300"
+                                title="Reject Booking"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => handleDelete(b._id, false)}
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-300"
+                              title="Delete Record"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
                         )}
-                        {b.status !== 'Rejected' && (
-                          <button
-                            onClick={() => handleStatusChange(b._id, 'Rejected')}
-                            className="p-1.5 rounded-lg bg-rose-900/60 hover:bg-rose-800 text-rose-300"
-                            title="Reject Booking"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDelete(b._id)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-300"
-                          title="Delete Record"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -263,14 +379,121 @@ const AdminBookings = () => {
         )}
       </div>
 
+      {/* Modal: Block / Reserve A Date (Admin) */}
+      {blockModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+          <div className="max-w-lg w-full my-auto rounded-3xl bg-brand-navy border border-slate-700/80 p-5 sm:p-7 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <span className="text-[10px] uppercase tracking-widest text-brand-accent font-bold block">
+                  Calendar Management
+                </span>
+                <h3 className="text-xl font-cinematic font-bold text-white flex items-center space-x-2">
+                  <Lock className="w-5 h-5 text-amber-400" />
+                  <span>Block / Reserve Date</span>
+                </h3>
+              </div>
+              <button
+                onClick={() => setBlockModalOpen(false)}
+                className="p-2 rounded-full text-slate-400 hover:text-white bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+              When you block a date or slot here, it will <strong>immediately display as "Already Booked"</strong> to all clients on the website, preventing double bookings.
+            </p>
+
+            <form onSubmit={handleBlockSubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-300 font-semibold uppercase tracking-wider mb-1.5">
+                  Select Date to Block *
+                </label>
+                <input
+                  type="date"
+                  required
+                  min={todayStr}
+                  value={blockForm.date}
+                  onChange={(e) => setBlockForm({ ...blockForm, date: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:border-brand-accent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold uppercase tracking-wider mb-1.5">
+                  Scope / Slot to Lock *
+                </label>
+                <select
+                  value={blockForm.slot}
+                  onChange={(e) => setBlockForm({ ...blockForm, slot: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-brand-accent cursor-pointer"
+                >
+                  {timeSlotOptions.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold uppercase tracking-wider mb-1.5">
+                  Reason / Client Reference *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={blockForm.reason}
+                  onChange={(e) => setBlockForm({ ...blockForm, reason: e.target.value })}
+                  placeholder="e.g. Reserved for Verma Wedding (Booked Offline), Studio Closed"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-brand-accent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold uppercase tracking-wider mb-1.5">
+                  Internal Notes (Optional)
+                </label>
+                <textarea
+                  rows="2"
+                  value={blockForm.notes}
+                  onChange={(e) => setBlockForm({ ...blockForm, notes: e.target.value })}
+                  placeholder="Advance payment collected, client phone number, venue details..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-brand-accent resize-none"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-slate-800 flex items-center justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setBlockModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingBlock}
+                  className="px-6 py-2.5 rounded-xl bg-brand-accent hover:bg-rose-700 text-white text-xs font-bold uppercase tracking-wider shadow-glow-red disabled:opacity-50 flex items-center space-x-1.5"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>{submittingBlock ? 'Locking Date...' : 'Lock Date Now'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Modal: Full Booking Details View & Status Operations */}
       {selectedBooking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-          <div className="max-w-xl w-full my-auto rounded-3xl bg-brand-navy border border-slate-700 p-5 sm:p-8 space-y-5 sm:space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="max-w-xl w-full my-auto rounded-3xl bg-brand-navy border border-slate-700 p-5 sm:p-8 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div>
                 <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest block">
-                  Booking Details
+                  {selectedBooking.isBlockedDate ? 'Studio Calendar Lock' : 'Booking Details'}
                 </span>
                 <h3 className="text-xl font-cinematic font-bold text-white">
                   Ref: {selectedBooking.bookingReference}
@@ -286,24 +509,32 @@ const AdminBookings = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs">
               <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
-                <span className="text-slate-400 uppercase text-[10px] block">Customer</span>
+                <span className="text-slate-400 uppercase text-[10px] block">
+                  {selectedBooking.isBlockedDate ? 'Lock Reason / Client' : 'Customer'}
+                </span>
                 <span className="text-sm font-semibold text-white break-words">{selectedBooking.customerName}</span>
-                <div className="mt-1 text-slate-300">{selectedBooking.customerPhone}</div>
-                <div className="text-slate-400 break-all">{selectedBooking.customerEmail}</div>
+                {!selectedBooking.isBlockedDate && (
+                  <>
+                    <div className="mt-1 text-slate-300">{selectedBooking.customerPhone}</div>
+                    <div className="text-slate-400 break-all">{selectedBooking.customerEmail}</div>
+                  </>
+                )}
               </div>
 
               <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
                 <span className="text-slate-400 uppercase text-[10px] block">Event & Package</span>
                 <span className="text-sm font-semibold text-amber-400">{selectedBooking.eventType}</span>
                 <div className="mt-1 text-white">{selectedBooking.packageName}</div>
-                <div className="text-emerald-400 font-bold font-cinematic">
-                  {formatPrice(selectedBooking.packagePrice)}
-                </div>
+                {selectedBooking.packagePrice > 0 && (
+                  <div className="text-emerald-400 font-bold font-cinematic">
+                    {formatPrice(selectedBooking.packagePrice)}
+                  </div>
+                )}
               </div>
 
               <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
                 <span className="text-slate-400 uppercase text-[10px] block">Date & Time</span>
-                <span className="text-sm font-semibold text-white">{selectedBooking.eventDate}</span>
+                <span className="text-sm font-semibold text-white font-mono">{selectedBooking.eventDate}</span>
                 <div className="text-slate-300 mt-1">{selectedBooking.eventTimeSlot}</div>
               </div>
 
@@ -316,33 +547,45 @@ const AdminBookings = () => {
             {selectedBooking.additionalMessage && (
               <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300">
                 <span className="text-[10px] uppercase text-slate-500 font-bold block mb-1">
-                  Customer Vision / Message
+                  {selectedBooking.isBlockedDate ? 'Internal Notes' : 'Customer Vision / Message'}
                 </span>
                 "{selectedBooking.additionalMessage}"
               </div>
             )}
 
             {/* Status Change Buttons */}
-            <div className="pt-4 border-t border-slate-800">
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-2">
-                Set Current Booking Status:
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {['Pending', 'Confirmed', 'Completed', 'Cancelled', 'Rejected'].map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => handleStatusChange(selectedBooking._id, st)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
-                      selectedBooking.status === st
-                        ? 'bg-brand-accent text-white shadow-glow-red'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                    }`}
-                  >
-                    {st}
-                  </button>
-                ))}
+            {!selectedBooking.isBlockedDate ? (
+              <div className="pt-4 border-t border-slate-800">
+                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-2">
+                  Set Current Booking Status:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {['Pending', 'Confirmed', 'Completed', 'Cancelled', 'Rejected'].map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => handleStatusChange(selectedBooking._id, st)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                        selectedBooking.status === st
+                          ? 'bg-brand-accent text-white shadow-glow-red'
+                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="pt-4 border-t border-slate-800 flex justify-end">
+                <button
+                  onClick={() => handleDelete(selectedBooking._id, true)}
+                  className="px-4 py-2 rounded-xl bg-purple-900/80 hover:bg-purple-800 text-white text-xs font-bold uppercase tracking-wider flex items-center space-x-1.5"
+                >
+                  <Unlock className="w-4 h-4" />
+                  <span>Unblock This Date</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

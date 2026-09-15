@@ -48,7 +48,7 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
         return;
       }
       if (!bookingData.eventTimeSlot) {
-        setErrorMsg('Please select a time slot.');
+        setErrorMsg('Please select an available time slot. If this date is already booked, please select an alternative date.');
         return;
       }
     }

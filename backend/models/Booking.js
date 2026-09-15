@@ -69,6 +69,10 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    isBlockedDate: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
