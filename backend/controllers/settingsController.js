@@ -73,9 +73,42 @@ const updateSettings = async (req, res, next) => {
 
     if (businessName) settings.businessName = businessName.trim();
     if (tagline) settings.tagline = tagline.trim();
-    if (phone) settings.phone = phone.trim();
-    if (email) settings.email = email.toLowerCase().trim();
-    if (whatsapp) settings.whatsapp = whatsapp.trim();
+
+    if (phone) {
+      const cleanPhone = String(phone).replace(/\D/g, '');
+      const finalPhone = cleanPhone.length === 12 && cleanPhone.startsWith('91') ? cleanPhone.slice(2) : cleanPhone;
+      if (finalPhone.length !== 10) {
+        return res.status(400).json({
+          success: false,
+          message: 'Primary phone number must be a valid 10-digit mobile number.',
+        });
+      }
+      settings.phone = finalPhone;
+    }
+
+    if (whatsapp) {
+      const cleanWhatsapp = String(whatsapp).replace(/\D/g, '');
+      const finalWhatsapp = cleanWhatsapp.length === 12 && cleanWhatsapp.startsWith('91') ? cleanWhatsapp.slice(2) : cleanWhatsapp;
+      if (finalWhatsapp.length !== 10) {
+        return res.status(400).json({
+          success: false,
+          message: 'WhatsApp number must be a valid 10-digit mobile number.',
+        });
+      }
+      settings.whatsapp = finalWhatsapp;
+    }
+
+    if (email) {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(String(email).trim().toLowerCase())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid contact email address.',
+        });
+      }
+      settings.email = email.toLowerCase().trim();
+    }
+
     if (address) settings.address = address.trim();
 
     if (socialLinks) {

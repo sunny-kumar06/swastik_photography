@@ -8,6 +8,7 @@ import StepDateTime from './StepDateTime';
 import StepCustomer from './StepCustomer';
 import StepSummary from './StepSummary';
 import { bookingsApi } from '../../api/client';
+import { sanitizePhoneNumber, isValidPhoneNumber, isValidEmail } from '../../utils/validation';
 
 const stepLabels = ['Event', 'Package', 'Date & Time', 'Details', 'Confirm'];
 
@@ -61,6 +62,17 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
         setErrorMsg('Please fill in all mandatory customer & location fields.');
         return;
       }
+
+      const cleanPhone = sanitizePhoneNumber(bookingData.customerPhone);
+      if (cleanPhone.length !== 10) {
+        setErrorMsg('Please enter a valid 10-digit mobile number (e.g. 9608782890).');
+        return;
+      }
+
+      if (!isValidEmail(bookingData.customerEmail)) {
+        setErrorMsg('Please enter a valid email address (e.g. yourname@example.com).');
+        return;
+      }
     }
     setCurrentStep((prev) => Math.min(prev + 1, 5));
   };
@@ -75,7 +87,12 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
     setErrorMsg('');
 
     try {
-      const res = await bookingsApi.create(bookingData);
+      const cleanData = {
+        ...bookingData,
+        customerPhone: sanitizePhoneNumber(bookingData.customerPhone),
+        customerEmail: bookingData.customerEmail.trim().toLowerCase(),
+      };
+      const res = await bookingsApi.create(cleanData);
       if (res.data && res.data.success) {
         setConfirmedResult(res.data.data);
         // Trigger celebratory confetti

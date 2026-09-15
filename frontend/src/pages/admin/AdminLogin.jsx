@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Lock, Mail, ShieldCheck, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import AnimatedBrand from '../../components/common/AnimatedBrand';
+import { isValidEmail } from '../../utils/validation';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -21,6 +22,12 @@ const AdminLogin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid administrator email address (e.g. admin@example.com).');
+      return;
+    }
+
     setLoading(true);
 
     try {

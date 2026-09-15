@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { settingsApi } from '../../api/client';
 import { useSettings } from '../../context/SettingsContext';
+import { sanitizePhoneNumber, isValidEmail } from '../../utils/validation';
 
 const AdminSettings = () => {
   const { settings, updateSettingsState, refreshSettings } = useSettings();
@@ -15,7 +16,11 @@ const AdminSettings = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name.includes('.')) {
+    if (name === 'phone' || name === 'whatsapp') {
+      setFormData((prev) => ({ ...prev, [name]: sanitizePhoneNumber(value) }));
+    } else if (name === 'email') {
+      setFormData((prev) => ({ ...prev, email: value.trim() }));
+    } else if (name.includes('.')) {
       const [parent, child] = name.split('.');
       setFormData((prev) => ({
         ...prev,
@@ -31,11 +36,46 @@ const AdminSettings = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setStatusMsg(null);
 
+    const cleanPhone = sanitizePhoneNumber(formData.phone);
+    if (cleanPhone.length !== 10) {
+      setStatusMsg({
+        type: 'error',
+        text: 'Primary Phone Number must be exactly 10 digits (e.g. 9608782890).',
+      });
+      return;
+    }
+
+    if (formData.whatsapp) {
+      const cleanWhatsapp = sanitizePhoneNumber(formData.whatsapp);
+      if (cleanWhatsapp.length !== 10) {
+        setStatusMsg({
+          type: 'error',
+          text: 'WhatsApp Number must be exactly 10 digits.',
+        });
+        return;
+      }
+    }
+
+    if (!isValidEmail(formData.email)) {
+      setStatusMsg({
+        type: 'error',
+        text: 'Please enter a valid notification & contact email address.',
+      });
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const res = await settingsApi.update(formData);
+      const cleanPayload = {
+        ...formData,
+        phone: cleanPhone,
+        whatsapp: formData.whatsapp ? sanitizePhoneNumber(formData.whatsapp) : '',
+        email: formData.email.trim().toLowerCase(),
+      };
+      const res = await settingsApi.update(cleanPayload);
       if (res.data && res.data.success) {
         updateSettingsState(res.data.data);
         setStatusMsg({
@@ -117,15 +157,31 @@ const AdminSettings = () => {
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold uppercase tracking-wider mb-2">
-                Primary Phone Number *
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-slate-300 font-semibold uppercase tracking-wider">
+                  Primary Phone Number *
+                </label>
+                <span
+                  className={`text-[10px] font-mono font-medium ${
+                    formData.phone?.length === 10
+                      ? 'text-emerald-400'
+                      : formData.phone?.length > 0
+                      ? 'text-amber-400'
+                      : 'text-slate-500'
+                  }`}
+                >
+                  {formData.phone?.length || 0}/10 digits
+                </span>
+              </div>
               <input
-                type="text"
+                type="tel"
                 name="phone"
                 required
+                maxLength={10}
+                inputMode="numeric"
                 value={formData.phone || ''}
                 onChange={handleChange}
+                placeholder="10-digit number (e.g. 9608782890)"
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-brand-accent font-mono"
               />
               <span className="text-[10px] text-slate-500 mt-1 block">Default: 9608782890</span>
@@ -141,20 +197,35 @@ const AdminSettings = () => {
                 required
                 value={formData.email || ''}
                 onChange={handleChange}
+                placeholder="studio@example.com"
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-brand-accent font-mono"
               />
               <span className="text-[10px] text-slate-500 mt-1 block">Default: sk61398sny@gmail.com</span>
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold uppercase tracking-wider mb-2">
-                WhatsApp Number
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-slate-300 font-semibold uppercase tracking-wider">
+                  WhatsApp Number
+                </label>
+                {formData.whatsapp && (
+                  <span
+                    className={`text-[10px] font-mono font-medium ${
+                      formData.whatsapp.length === 10 ? 'text-emerald-400' : 'text-amber-400'
+                    }`}
+                  >
+                    {formData.whatsapp.length}/10 digits
+                  </span>
+                )}
+              </div>
               <input
-                type="text"
+                type="tel"
                 name="whatsapp"
+                maxLength={10}
+                inputMode="numeric"
                 value={formData.whatsapp || ''}
                 onChange={handleChange}
+                placeholder="10-digit number (e.g. 9608782890)"
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-brand-accent font-mono"
               />
             </div>

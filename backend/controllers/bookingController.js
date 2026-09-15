@@ -59,6 +59,25 @@ const createBooking = async (req, res, next) => {
       });
     }
 
+    // Validate and sanitize phone number (must be 10 digits)
+    const cleanPhone = String(customerPhone).replace(/\D/g, '');
+    const finalPhone = cleanPhone.length === 12 && cleanPhone.startsWith('91') ? cleanPhone.slice(2) : cleanPhone;
+    if (finalPhone.length !== 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'Customer phone number must be a valid 10-digit mobile number.',
+      });
+    }
+
+    // Validate email address
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(String(customerEmail).trim().toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid customer email address.',
+      });
+    }
+
     // Check if the date is in the past
     const selectedDate = new Date(eventDate);
     const today = new Date();
@@ -102,7 +121,7 @@ const createBooking = async (req, res, next) => {
       eventDate,
       eventTimeSlot,
       customerName: customerName.trim(),
-      customerPhone: customerPhone.trim(),
+      customerPhone: finalPhone,
       customerEmail: customerEmail.toLowerCase().trim(),
       eventLocation: eventLocation.trim(),
       additionalMessage: additionalMessage ? additionalMessage.trim() : '',

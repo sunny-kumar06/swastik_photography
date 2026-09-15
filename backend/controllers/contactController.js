@@ -12,10 +12,29 @@ const submitContactForm = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please fill all required fields' });
     }
 
+    // Validate and sanitize phone number (must be 10 digits)
+    const cleanPhone = String(phone).replace(/\D/g, '');
+    const finalPhone = cleanPhone.length === 12 && cleanPhone.startsWith('91') ? cleanPhone.slice(2) : cleanPhone;
+    if (finalPhone.length !== 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number must be a valid 10-digit mobile number.',
+      });
+    }
+
+    // Validate email address
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(String(email).trim().toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address.',
+      });
+    }
+
     const newContact = await Contact.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      phone: phone.trim(),
+      phone: finalPhone,
       message: message.trim(),
     });
 

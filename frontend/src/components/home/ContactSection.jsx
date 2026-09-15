@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Phone, Mail, MapPin, Send, MessageCircle, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 import { contactApi } from '../../api/client';
+import { sanitizePhoneNumber, isValidEmail } from '../../utils/validation';
 
 const ContactSection = () => {
   const { settings } = useSettings();
@@ -17,16 +18,45 @@ const ContactSection = () => {
   const [status, setStatus] = useState(null); // { type: 'success' | 'error', message: string }
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'phone') {
+      setFormData({ ...formData, phone: sanitizePhoneNumber(value) });
+    } else if (name === 'email') {
+      setFormData({ ...formData, email: value.trim() });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setStatus(null);
 
+    const cleanPhone = sanitizePhoneNumber(formData.phone);
+    if (cleanPhone.length !== 10) {
+      setStatus({
+        type: 'error',
+        message: 'Please enter a valid 10-digit mobile number (e.g. 9608782890).',
+      });
+      return;
+    }
+
+    if (!isValidEmail(formData.email)) {
+      setStatus({
+        type: 'error',
+        message: 'Please enter a valid email address (e.g. yourname@example.com).',
+      });
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const res = await contactApi.submit(formData);
+      const res = await contactApi.submit({
+        ...formData,
+        phone: cleanPhone,
+        email: formData.email.trim().toLowerCase(),
+      });
       if (res.data && res.data.success) {
         setStatus({
           type: 'success',
@@ -167,17 +197,38 @@ const ContactSection = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                      Phone Number *
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                        Phone Number *
+                      </label>
+                      <span
+                        className={`text-[10px] font-mono font-medium ${
+                          formData.phone?.length === 10
+                            ? 'text-emerald-400'
+                            : formData.phone?.length > 0
+                            ? 'text-amber-400'
+                            : 'text-slate-500'
+                        }`}
+                      >
+                        {formData.phone?.length || 0}/10 digits
+                      </span>
+                    </div>
                     <input
                       type="tel"
                       name="phone"
                       required
+                      maxLength={10}
+                      inputMode="numeric"
                       value={formData.phone}
                       onChange={handleChange}
-                      placeholder="e.g. 9608782890"
-                      className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-sm focus:outline-none focus:border-brand-accent transition-colors"
+                      placeholder="10-digit number (e.g. 9608782890)"
+                      className={`w-full px-4 py-3 rounded-xl bg-slate-900 border text-white text-sm focus:outline-none transition-colors font-mono ${
+                        formData.phone?.length > 0 && formData.phone?.length < 10
+                          ? 'border-amber-500/70 focus:border-amber-500'
+                          : formData.phone?.length === 10
+                          ? 'border-emerald-500/70 focus:border-emerald-500'
+                          : 'border-slate-800 focus:border-brand-accent'
+                      }`}
                     />
                   </div>
                 </div>
