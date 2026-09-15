@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Tag } from 'lucide-react';
+import { getMediaUrl } from '../../api/client';
 
 const Lightbox = ({ isOpen, photos, currentIndex, onClose, onPrev, onNext }) => {
   const currentPhoto = photos && photos.length > 0 ? photos[currentIndex] : null;
@@ -61,10 +62,10 @@ const Lightbox = ({ isOpen, photos, currentIndex, onClose, onPrev, onNext }) => 
         {photos.length > 1 && (
           <button
             onClick={onPrev}
-            className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white border border-slate-700 hover:border-brand-accent transition-all z-10"
+            className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white border border-slate-700 hover:border-brand-accent transition-all z-10"
             aria-label="Previous Photo"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         )}
 
@@ -75,21 +76,21 @@ const Lightbox = ({ isOpen, photos, currentIndex, onClose, onPrev, onNext }) => 
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.96 }}
           transition={{ duration: 0.3 }}
-          className="relative max-w-5xl max-h-[82vh] w-full px-4 flex flex-col items-center justify-center"
+          className="relative max-w-5xl max-h-[82vh] w-full px-2 sm:px-4 flex flex-col items-center justify-center"
         >
           <img
-            src={currentPhoto.imageUrl}
+            src={getMediaUrl(currentPhoto.imageUrl)}
             alt={currentPhoto.title || 'Swastik Photography Showcase'}
-            className="max-h-[75vh] max-w-full object-contain rounded-lg shadow-2xl border border-slate-800"
+            className="max-h-[62vh] sm:max-h-[75vh] max-w-full object-contain rounded-lg shadow-2xl border border-slate-800"
           />
 
           {/* Photo Info Caption */}
-          <div className="mt-4 text-center max-w-xl">
-            <h3 className="text-lg sm:text-xl font-cinematic font-bold text-white tracking-wide">
+          <div className="mt-3 sm:mt-4 text-center max-w-xl px-2">
+            <h3 className="text-base sm:text-xl font-cinematic font-bold text-white tracking-wide">
               {currentPhoto.title}
             </h3>
             {currentPhoto.description && (
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              <p className="text-[11px] sm:text-sm text-slate-400 mt-1 line-clamp-2">
                 {currentPhoto.description}
               </p>
             )}
@@ -100,10 +101,10 @@ const Lightbox = ({ isOpen, photos, currentIndex, onClose, onPrev, onNext }) => 
         {photos.length > 1 && (
           <button
             onClick={onNext}
-            className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white border border-slate-700 hover:border-brand-accent transition-all z-10"
+            className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white border border-slate-700 hover:border-brand-accent transition-all z-10"
             aria-label="Next Photo"
           >
-            <ChevronRight className="w-6 h-6" />
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         )}
       </div>

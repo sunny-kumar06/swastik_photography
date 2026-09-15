@@ -154,7 +154,7 @@ const AdminGallery = () => {
 
       {/* Gallery Photos Grid */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {[1, 2, 3, 4, 5, 6].map((n) => (
             <div key={n} className="h-64 bg-slate-900/60 rounded-2xl animate-pulse border border-slate-800" />
           ))}
@@ -165,7 +165,7 @@ const AdminGallery = () => {
           No photos found in gallery. Click "Upload Photo" to add your first showcase photograph.
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {photos.map((photo) => (
             <div
               key={photo._id}
@@ -228,8 +228,8 @@ const AdminGallery = () => {
 
       {/* Upload / Edit Modal */}
       {uploadModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="max-w-lg w-full rounded-3xl bg-brand-navy border border-slate-700 p-6 sm:p-8 space-y-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+          <div className="max-w-lg w-full my-auto rounded-3xl bg-brand-navy border border-slate-700 p-5 sm:p-8 space-y-5 sm:space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <h3 className="text-xl font-cinematic font-bold text-white">
                 {editingPhoto ? 'Edit Photo Details' : 'Upload To Gallery'}

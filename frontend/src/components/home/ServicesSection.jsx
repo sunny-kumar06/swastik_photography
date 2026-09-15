@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, Check } from 'lucide-react';
-import { servicesApi } from '../../api/client';
+import { servicesApi, getMediaUrl } from '../../api/client';
 
 const ServicesSection = ({ onSelectServiceForBooking }) => {
   const [services, setServices] = useState([]);
@@ -75,7 +75,7 @@ const ServicesSection = ({ onSelectServiceForBooking }) => {
                 {/* Image Container with Zoom */}
                 <div className="relative h-60 sm:h-64 overflow-hidden">
                   <img
-                    src={service.image}
+                    src={getMediaUrl(service.image)}
                     alt={service.title}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     loading="lazy"

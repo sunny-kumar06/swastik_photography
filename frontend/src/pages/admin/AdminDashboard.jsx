@@ -167,7 +167,7 @@ const AdminDashboard = () => {
                   key={b._id}
                   className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 flex items-center justify-between transition-colors"
                 >
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0 flex-1 mr-3">
                     <div className="flex items-center space-x-2">
                       <span className="text-xs font-mono font-bold text-amber-400">
                         {b.bookingReference}
@@ -184,17 +184,17 @@ const AdminDashboard = () => {
                         {b.status}
                       </span>
                     </div>
-                    <div className="text-sm font-semibold text-white">
+                    <div className="text-sm font-semibold text-white truncate">
                       {b.customerName}
                     </div>
-                    <div className="text-xs text-slate-400 flex items-center space-x-2">
+                    <div className="text-xs text-slate-400 flex items-center space-x-2 truncate">
                       <span>{b.eventType}</span>
                       <span>•</span>
                       <span>{b.eventDate}</span>
                     </div>
                   </div>
 
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0">
                     <div className="text-sm font-bold text-emerald-400 font-cinematic">
                       {formatPrice(b.packagePrice)}
                     </div>

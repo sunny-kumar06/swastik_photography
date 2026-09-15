@@ -37,17 +37,17 @@ const AnimatedBrand = ({
   };
 
   const sizeClasses = {
-    sm: 'text-lg tracking-[0.2em]',
-    default: 'text-xl sm:text-2xl tracking-[0.25em]',
-    lg: 'text-3xl sm:text-4xl tracking-[0.3em]',
-    hero: 'text-4xl sm:text-6xl md:text-7xl tracking-[0.25em] md:tracking-[0.35em]',
+    sm: 'text-base sm:text-lg tracking-[0.12em] sm:tracking-[0.2em]',
+    default: 'text-base sm:text-2xl tracking-[0.12em] sm:tracking-[0.25em]',
+    lg: 'text-xl sm:text-4xl tracking-[0.15em] sm:tracking-[0.3em]',
+    hero: 'text-2xl sm:text-5xl md:text-7xl tracking-[0.12em] sm:tracking-[0.25em] md:tracking-[0.35em]',
   };
 
   const subtitleSize = {
-    sm: 'text-[9px] tracking-[0.25em]',
-    default: 'text-[10px] sm:text-xs tracking-[0.3em]',
-    lg: 'text-xs sm:text-sm tracking-[0.35em]',
-    hero: 'text-xs sm:text-sm md:text-base tracking-[0.4em] md:tracking-[0.5em]',
+    sm: 'text-[8px] sm:text-[9px] tracking-[0.15em] sm:tracking-[0.25em]',
+    default: 'text-[8px] sm:text-xs tracking-[0.15em] sm:tracking-[0.3em]',
+    lg: 'text-[10px] sm:text-sm tracking-[0.18em] sm:tracking-[0.35em]',
+    hero: 'text-[9px] sm:text-sm md:text-base tracking-[0.18em] sm:tracking-[0.4em] md:tracking-[0.5em]',
   };
 
   return (
@@ -78,7 +78,7 @@ const AnimatedBrand = ({
         {/* Separator Diamond / Shimmer Dot */}
         <motion.span
           variants={letterVariants}
-          className="mx-2 sm:mx-3 text-brand-accent text-xs sm:text-sm inline-block animate-pulse"
+          className="mx-1.5 sm:mx-3 text-brand-accent text-[10px] sm:text-sm inline-block animate-pulse"
         >
           ✦
         </motion.span>

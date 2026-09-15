@@ -160,7 +160,7 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
         )}
 
         {/* Step Container Card */}
-        <div className="p-6 sm:p-10 rounded-3xl bg-brand-card/90 border border-slate-800 shadow-2xl backdrop-blur-md">
+        <div className="p-4 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl bg-brand-card/90 border border-slate-800 shadow-2xl backdrop-blur-md">
           {errorMsg && (
             <div className="p-4 rounded-xl mb-6 bg-rose-950/70 border border-rose-500 text-rose-200 text-xs sm:text-sm flex items-center space-x-3">
               <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-400" />
@@ -233,12 +233,12 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
 
           {/* Stepper Navigation Buttons */}
           {!confirmedResult && (
-            <div className="flex items-center justify-between pt-8 mt-8 border-t border-slate-800">
+            <div className="flex items-center justify-between pt-6 sm:pt-8 mt-6 sm:mt-8 border-t border-slate-800">
               {currentStep > 1 ? (
                 <button
                   type="button"
                   onClick={handlePrevStep}
-                  className="inline-flex items-center space-x-2 px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider border border-slate-700 transition-colors"
+                  className="inline-flex items-center space-x-1.5 sm:space-x-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider border border-slate-700 transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span>Back</span>
@@ -251,7 +251,7 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
                 <button
                   type="button"
                   onClick={handleNextStep}
-                  className="inline-flex items-center space-x-2 px-8 py-3.5 rounded-xl bg-brand-accent hover:bg-rose-700 text-white text-xs font-bold uppercase tracking-wider shadow-glow-red transition-all"
+                  className="inline-flex items-center space-x-1.5 sm:space-x-2 px-5 sm:px-8 py-2.5 sm:py-3.5 rounded-xl bg-brand-accent hover:bg-rose-700 text-white text-xs font-bold uppercase tracking-wider shadow-glow-red transition-all"
                 >
                   <span>Continue</span>
                   <ChevronRight className="w-4 h-4" />

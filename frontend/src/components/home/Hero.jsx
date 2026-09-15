@@ -58,11 +58,11 @@ const Hero = ({ onBookNowClick }) => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-xs font-semibold text-amber-300 uppercase tracking-widest mb-6 backdrop-blur-md"
+          className="inline-flex items-center space-x-2 px-3 sm:px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-[10px] sm:text-xs font-semibold text-amber-300 uppercase tracking-wider sm:tracking-widest mb-6 backdrop-blur-md max-w-full"
         >
-          <Award className="w-3.5 h-3.5 text-amber-400" />
-          <span>Award-Winning Wedding & Cinema Studio</span>
-          <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+          <Award className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+          <span className="truncate">Award-Winning Wedding & Cinema Studio</span>
+          <Star className="w-3 h-3 text-amber-400 fill-amber-400 flex-shrink-0" />
         </motion.div>
 
         {/* Prominent Animated Brand */}
@@ -90,7 +90,7 @@ const Hero = ({ onBookNowClick }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-5 text-sm sm:text-base md:text-lg text-slate-300 max-w-2xl font-light tracking-wide leading-relaxed"
+          className="mt-4 sm:mt-5 text-sm sm:text-base md:text-lg text-slate-300 max-w-2xl font-light tracking-wide leading-relaxed px-2 sm:px-0"
         >
           {settings.heroSubtitle || 'Premium Photography & Cinematic Videography for Signature Celebrations'}
         </motion.p>
@@ -100,12 +100,12 @@ const Hero = ({ onBookNowClick }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.75 }}
-          className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 mt-8 max-w-2xl"
+          className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2.5 mt-6 sm:mt-8 max-w-2xl"
         >
           {serviceTags.map((tag) => (
             <span
               key={tag}
-              className="px-3.5 py-1.5 rounded-full text-xs font-medium bg-slate-900/60 border border-slate-700/60 text-slate-300 hover:border-brand-accent hover:text-white transition-colors backdrop-blur-sm"
+              className="px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-medium bg-slate-900/60 border border-slate-700/60 text-slate-300 hover:border-brand-accent hover:text-white transition-colors backdrop-blur-sm"
             >
               {tag}
             </span>
@@ -117,13 +117,13 @@ const Hero = ({ onBookNowClick }) => {
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.9 }}
-          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5 w-full max-w-md"
+          className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-5 w-full max-w-md"
         >
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleBookingScroll}
-            className="w-full sm:w-auto px-8 py-4 rounded-full bg-gradient-to-r from-brand-accent via-rose-600 to-pink-600 text-white font-semibold text-sm tracking-widest uppercase shadow-glow-red hover:shadow-2xl flex items-center justify-center space-x-2 transition-all"
+            className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-brand-accent via-rose-600 to-pink-600 text-white font-semibold text-xs sm:text-sm tracking-widest uppercase shadow-glow-red hover:shadow-2xl flex items-center justify-center space-x-2 transition-all"
           >
             <Calendar className="w-4 h-4" />
             <span>Book Your Date</span>
@@ -134,7 +134,7 @@ const Hero = ({ onBookNowClick }) => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleGalleryScroll}
-            className="w-full sm:w-auto px-8 py-4 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white font-semibold text-sm tracking-widest uppercase border border-slate-700 hover:border-slate-500 flex items-center justify-center space-x-2 transition-all backdrop-blur-sm"
+            className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white font-semibold text-xs sm:text-sm tracking-widest uppercase border border-slate-700 hover:border-slate-500 flex items-center justify-center space-x-2 transition-all backdrop-blur-sm"
           >
             <ImageIcon className="w-4 h-4 text-amber-400" />
             <span>Explore Gallery</span>

@@ -265,8 +265,8 @@ const AdminBookings = () => {
 
       {/* Modal: Full Booking Details View & Status Operations */}
       {selectedBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="max-w-xl w-full rounded-3xl bg-brand-navy border border-slate-700 p-6 sm:p-8 space-y-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+          <div className="max-w-xl w-full my-auto rounded-3xl bg-brand-navy border border-slate-700 p-5 sm:p-8 space-y-5 sm:space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div>
                 <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest block">
@@ -284,12 +284,12 @@ const AdminBookings = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs">
               <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
                 <span className="text-slate-400 uppercase text-[10px] block">Customer</span>
-                <span className="text-sm font-semibold text-white">{selectedBooking.customerName}</span>
+                <span className="text-sm font-semibold text-white break-words">{selectedBooking.customerName}</span>
                 <div className="mt-1 text-slate-300">{selectedBooking.customerPhone}</div>
-                <div className="text-slate-400 truncate">{selectedBooking.customerEmail}</div>
+                <div className="text-slate-400 break-all">{selectedBooking.customerEmail}</div>
               </div>
 
               <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
@@ -309,7 +309,7 @@ const AdminBookings = () => {
 
               <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
                 <span className="text-slate-400 uppercase text-[10px] block">Location</span>
-                <span className="text-xs text-white">{selectedBooking.eventLocation}</span>
+                <span className="text-xs text-white break-words">{selectedBooking.eventLocation}</span>
               </div>
             </div>
 

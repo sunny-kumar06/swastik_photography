@@ -78,8 +78,8 @@ const Navbar = ({ onBookNowClick }) => {
             ))}
           </nav>
 
-          {/* Right Action Buttons */}
-          <div className="hidden sm:flex items-center space-x-4">
+          {/* Desktop Right Action Buttons */}
+          <div className="hidden lg:flex items-center space-x-4">
             {/* Quick Call */}
             <a
               href={`tel:${settings.phone}`}
@@ -102,13 +102,14 @@ const Navbar = ({ onBookNowClick }) => {
             </motion.button>
           </div>
 
-          {/* Mobile Hamburger Button */}
-          <div className="flex sm:hidden items-center space-x-2">
+          {/* Mobile & Tablet Action & Hamburger Button */}
+          <div className="flex lg:hidden items-center space-x-2">
             <button
               onClick={handleBookingTrigger}
-              className="px-3 py-1.5 rounded-full bg-brand-accent text-white text-xs font-bold uppercase tracking-wider"
+              className="px-3 py-1.5 rounded-full bg-gradient-to-r from-brand-accent to-pink-600 text-white text-xs font-bold uppercase tracking-wider shadow-sm"
             >
-              Book
+              <span className="inline sm:hidden">Book</span>
+              <span className="hidden sm:inline">Book Date</span>
             </button>
             <button
               type="button"

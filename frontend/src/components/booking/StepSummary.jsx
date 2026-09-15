@@ -64,9 +64,9 @@ const StepSummary = ({ bookingData, onConfirm, submitting, confirmedResult }) =>
         </p>
       </div>
 
-      <div className="rounded-2xl bg-slate-900/80 border border-slate-700 p-6 sm:p-8 space-y-6 shadow-2xl">
+      <div className="rounded-2xl bg-slate-900/80 border border-slate-700 p-4 sm:p-8 space-y-5 sm:space-y-6 shadow-2xl">
         {/* Ticket Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-slate-800 pb-4 sm:pb-5">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400 block">
               Event Classification
@@ -76,7 +76,7 @@ const StepSummary = ({ bookingData, onConfirm, submitting, confirmedResult }) =>
             </h5>
           </div>
 
-          <div className="text-right">
+          <div className="text-left sm:text-right">
             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block">
               Package Investment
             </span>
@@ -88,7 +88,7 @@ const StepSummary = ({ bookingData, onConfirm, submitting, confirmedResult }) =>
         </div>
 
         {/* Schedule & Location Details */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm text-slate-300">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm text-slate-300">
           <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800">
             <Calendar className="w-4 h-4 text-brand-accent mt-0.5 flex-shrink-0" />
             <div>
@@ -110,19 +110,22 @@ const StepSummary = ({ bookingData, onConfirm, submitting, confirmedResult }) =>
         <div className="space-y-3 pt-2">
           <div className="flex items-start space-x-3 text-xs sm:text-sm text-slate-300">
             <User className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
-            <div>
+            <div className="min-w-0 flex-1">
               <span className="text-[10px] uppercase text-slate-400 block">Primary Contact</span>
-              <span className="text-white font-medium">
-                {bookingData.customerName} ({bookingData.customerPhone} • {bookingData.customerEmail})
+              <span className="text-white font-medium break-words">
+                {bookingData.customerName}
+                <span className="block text-slate-400 text-xs mt-0.5 sm:inline sm:text-inherit sm:mt-0">
+                  {' '}({bookingData.customerPhone} • {bookingData.customerEmail})
+                </span>
               </span>
             </div>
           </div>
 
           <div className="flex items-start space-x-3 text-xs sm:text-sm text-slate-300">
             <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
-            <div>
+            <div className="min-w-0 flex-1">
               <span className="text-[10px] uppercase text-slate-400 block">Venue / Destination</span>
-              <span className="text-white font-medium">{bookingData.eventLocation}</span>
+              <span className="text-white font-medium break-words">{bookingData.eventLocation}</span>
             </div>
           </div>
         </div>

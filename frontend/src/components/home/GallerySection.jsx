@@ -128,25 +128,25 @@ const GallerySection = () => {
                       loading="lazy"
                     />
 
-                    {/* Dark gradient overlay on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
+                    {/* Dark gradient overlay (always visible on touch mobile, on hover for desktop) */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 sm:p-6">
                       <div className="flex items-center justify-between">
-                        <div>
+                        <div className="pr-2 min-w-0">
                           <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400">
                             {photo.category}
                           </span>
-                          <h4 className="text-lg font-cinematic font-bold text-white mt-1 drop-shadow-md">
+                          <h4 className="text-base sm:text-lg font-cinematic font-bold text-white mt-0.5 sm:mt-1 drop-shadow-md truncate">
                             {photo.title}
                           </h4>
                           {photo.description && (
-                            <p className="text-xs text-slate-300 line-clamp-1 mt-1 font-light">
+                            <p className="text-xs text-slate-300 line-clamp-1 mt-0.5 font-light">
                               {photo.description}
                             </p>
                           )}
                         </div>
 
-                        <div className="p-2.5 rounded-full bg-brand-accent text-white shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                          <Maximize2 className="w-4 h-4" />
+                        <div className="p-2 sm:p-2.5 rounded-full bg-brand-accent text-white shadow-lg transform sm:translate-y-2 group-hover:translate-y-0 transition-transform flex-shrink-0">
+                          <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </div>
                       </div>
                     </div>
