@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Phone, Calendar, Sparkles } from 'lucide-react';
+import { Menu, X, Phone, Calendar, Sparkles, ShieldCheck } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 import AnimatedBrand from './AnimatedBrand';
 
@@ -149,9 +150,11 @@ const Navbar = ({ onBookNowClick }) => {
                   <AnimatedBrand size="sm" showSubtitle={false} />
                   <button
                     onClick={() => setMobileMenuOpen(false)}
-                    className="p-2 rounded-full text-slate-400 hover:text-white bg-slate-800/50"
+                    className="px-2.5 py-1.5 rounded-lg text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition-colors flex items-center space-x-1 text-xs font-semibold"
+                    aria-label="Close menu"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4" />
+                    <span>Close</span>
                   </button>
                 </div>
 
@@ -165,12 +168,27 @@ const Navbar = ({ onBookNowClick }) => {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.05 * idx }}
-                      className="text-lg font-medium text-slate-200 hover:text-brand-accent transition-colors flex items-center justify-between py-2 border-b border-slate-800/40"
+                      className="text-base font-medium text-slate-200 hover:text-brand-accent transition-colors flex items-center justify-between py-2 border-b border-slate-800/40"
                     >
                       <span>{link.name}</span>
                       <span className="text-slate-600 text-xs">0{idx + 1}</span>
                     </motion.a>
                   ))}
+
+                  {/* Admin Portal Direct Option */}
+                  <Link
+                    to="/admin/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-sm font-medium text-amber-300 hover:text-amber-200 transition-colors flex items-center justify-between py-2 border-b border-slate-800/40"
+                  >
+                    <span className="flex items-center space-x-2">
+                      <ShieldCheck className="w-4 h-4 text-brand-accent" />
+                      <span>Admin Portal</span>
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 uppercase font-semibold">
+                      Login
+                    </span>
+                  </Link>
                 </div>
               </div>
 

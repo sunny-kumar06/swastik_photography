@@ -13,7 +13,7 @@ import {
   Menu,
   X,
   ExternalLink,
-  ShieldAlert,
+  ChevronLeft,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -70,9 +70,12 @@ const AdminLayout = () => {
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-800"
+              className="lg:hidden px-2.5 py-1.5 rounded-lg text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition-colors flex items-center space-x-1 text-xs font-semibold"
+              aria-label="Close menu"
+              title="Close menu"
             >
-              <X className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
+              <span>Back</span>
             </button>
           </div>
 
@@ -138,10 +141,12 @@ const AdminLayout = () => {
         {/* Top bar for mobile header */}
         <header className="lg:hidden sticky top-0 z-30 bg-[#0c121e]/90 backdrop-blur-md border-b border-slate-800 px-4 py-3.5 flex items-center justify-between">
           <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg text-slate-300 hover:text-white bg-slate-800/60"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 rounded-lg text-slate-300 hover:text-white bg-slate-800/60 flex items-center space-x-1.5 focus:outline-none"
+            aria-label="Toggle Navigation Menu"
           >
             <Menu className="w-5 h-5" />
+            <span className="text-xs font-semibold text-slate-300">Menu</span>
           </button>
 
           <span className="font-cinematic font-bold text-sm text-white">
