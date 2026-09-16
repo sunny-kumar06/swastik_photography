@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { galleryApi, getMediaUrl } from '../../api/client';
 import { compressImage, formatFileSize } from '../../utils/imageCompressor';
+import OptimizedImage from '../../components/common/OptimizedImage';
 
 const categories = ['Wedding', 'Pre-Wedding', 'Birthday', 'Engagement', 'Portrait', 'Cinematic', 'Other'];
 
@@ -312,16 +313,13 @@ const AdminGallery = () => {
             >
               {/* Image Preview with Fallback */}
               <div className="relative h-48 overflow-hidden bg-slate-950">
-                <img
-                  src={getMediaUrl(photo.imageUrl)}
+                <OptimizedImage
+                  src={photo.imageUrl}
                   alt={photo.title}
-                  loading="lazy"
+                  width={600}
+                  quality={70}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src =
-                      'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=800&auto=format&fit=crop';
-                  }}
+                  containerClassName="w-full h-full"
                 />
 
                 {photo.isFeatured && (

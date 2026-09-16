@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, Check } from 'lucide-react';
 import { servicesApi, getMediaUrl } from '../../api/client';
+import OptimizedImage from '../common/OptimizedImage';
 
 const ServicesSection = ({ onSelectServiceForBooking }) => {
   const [services, setServices] = useState([]);
@@ -74,14 +75,16 @@ const ServicesSection = ({ onSelectServiceForBooking }) => {
               >
                 {/* Image Container with Zoom */}
                 <div className="relative h-60 sm:h-64 overflow-hidden">
-                  <img
-                    src={getMediaUrl(service.image)}
+                  <OptimizedImage
+                    src={service.image}
                     alt={service.title}
+                    width={800}
+                    quality={75}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    loading="lazy"
+                    containerClassName="w-full h-full"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand-card via-transparent to-transparent" />
-                  <div className="absolute top-4 left-4">
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-card via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute top-4 left-4 z-10">
                     <span className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/60 text-amber-300 border border-amber-400/30 backdrop-blur-md">
                       {service.category || 'Speciality'}
                     </span>

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Camera, Film, Users, Award, CheckCircle2 } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
+import OptimizedImage from '../common/OptimizedImage';
 
 const AboutSection = () => {
   const { settings } = useSettings();
@@ -47,14 +48,17 @@ const AboutSection = () => {
           >
             <div className="relative mx-auto max-w-md lg:max-w-none">
               {/* Main Portrait Frame */}
-              <div className="relative rounded-2xl overflow-hidden border border-slate-800 shadow-2xl z-10 group">
-                <img
-                  src="https://images.unsplash.com/photo-1554048612-b6a482bc67e5?q=80&w=1000&auto=format&fit=crop"
+              <div className="relative rounded-2xl overflow-hidden border border-slate-800 shadow-2xl z-10 group h-[450px] sm:h-[500px]">
+                <OptimizedImage
+                  src="https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&q=75&w=1000"
                   alt="Swastik Photography Master Behind the Lens"
-                  className="w-full h-[450px] sm:h-[500px] object-cover transition-transform duration-700 group-hover:scale-105"
+                  width={1000}
+                  quality={75}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  containerClassName="w-full h-full"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6 text-white">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute bottom-6 left-6 right-6 text-white z-10">
                   <span className="text-xs uppercase tracking-widest text-amber-400 font-semibold">Behind The Lens</span>
                   <h4 className="text-xl font-cinematic font-bold">Pure Passion for Authentic Emotion</h4>
                 </div>

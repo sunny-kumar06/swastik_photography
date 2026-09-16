@@ -79,13 +79,15 @@ const Lightbox = ({ isOpen, photos, currentIndex, onClose, onPrev, onNext }) => 
           className="relative max-w-5xl max-h-[82vh] w-full px-2 sm:px-4 flex flex-col items-center justify-center"
         >
           <img
-            src={getMediaUrl(currentPhoto.imageUrl)}
+            src={currentPhoto.imageUrl ? (currentPhoto.imageUrl.includes('images.unsplash.com') ? `${currentPhoto.imageUrl}&auto=format&fit=crop&q=82&w=1600` : getMediaUrl(currentPhoto.imageUrl)) : 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=1600'}
             alt={currentPhoto.title || 'Swastik Photography Showcase'}
+            fetchpriority="high"
+            decoding="async"
             className="max-h-[62vh] sm:max-h-[75vh] max-w-full object-contain rounded-lg shadow-2xl border border-slate-800"
             onError={(e) => {
               e.currentTarget.onerror = null;
               e.currentTarget.src =
-                'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1200&auto=format&fit=crop';
+                'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=1200';
             }}
           />
 

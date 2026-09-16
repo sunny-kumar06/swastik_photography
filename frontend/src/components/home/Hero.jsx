@@ -36,7 +36,7 @@ const Hero = ({ onBookNowClick }) => {
       <motion.div
         className="absolute inset-0 z-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1519741497674-611481863552?q=85&w=2000&auto=format&fit=crop')`,
+          backgroundImage: `url('https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=1920')`,
         }}
         initial={{ scale: 1.08 }}
         animate={{ scale: 1 }}

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Maximize2, Sparkles, ChevronDown } from 'lucide-react';
 import { galleryApi, getMediaUrl } from '../../api/client';
 import Lightbox from '../common/Lightbox';
+import OptimizedImage from '../common/OptimizedImage';
 
 const categories = [
   'All',
@@ -121,16 +122,13 @@ const GallerySection = () => {
                     onClick={() => openLightbox(index)}
                     className="group relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-brand-accent/50 cursor-pointer shadow-xl h-80 sm:h-96"
                   >
-                    <img
-                      src={getMediaUrl(photo.imageUrl)}
+                    <OptimizedImage
+                      src={photo.imageUrl}
                       alt={photo.title}
+                      width={800}
+                      quality={75}
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src =
-                          'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=800&auto=format&fit=crop';
-                      }}
+                      containerClassName="w-full h-full"
                     />
 
                     {/* Dark gradient overlay (always visible on touch mobile, on hover for desktop) */}
