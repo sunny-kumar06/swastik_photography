@@ -91,9 +91,24 @@ const StepSummary = ({ bookingData, onConfirm, submitting, confirmedResult }) =>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm text-slate-300">
           <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800">
             <Calendar className="w-4 h-4 text-brand-accent mt-0.5 flex-shrink-0" />
-            <div>
-              <span className="text-[10px] uppercase text-slate-400 block">Event Date</span>
-              <span className="font-semibold text-white">{bookingData.eventDate}</span>
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] uppercase text-slate-400 block">
+                {bookingData.isMultiDay ? `Event Dates (${bookingData.totalDays || bookingData.eventDates?.length || 1} Days)` : 'Event Date'}
+              </span>
+              {bookingData.isMultiDay && bookingData.eventDates && bookingData.eventDates.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {bookingData.eventDates.map((d, i) => (
+                    <span
+                      key={d}
+                      className="px-2 py-0.5 rounded-md bg-slate-800 text-amber-300 font-mono text-[11px] font-semibold border border-slate-700"
+                    >
+                      Day {i + 1}: {d}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <span className="font-semibold text-white font-mono">{bookingData.eventDate}</span>
+              )}
             </div>
           </div>
 

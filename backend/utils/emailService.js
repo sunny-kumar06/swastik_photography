@@ -88,8 +88,14 @@ const sendBookingNotification = async (booking) => {
             <div class="value price-tag">${formattedPrice}</div>
           </div>
           <div class="field-group">
-            <div class="label">Date</div>
-            <div class="value">${booking.eventDate}</div>
+            <div class="label">${booking.isMultiDay ? 'Dates (' + (booking.totalDays || booking.eventDates?.length || 1) + ' Days)' : 'Date'}</div>
+            <div class="value">
+              ${
+                booking.isMultiDay && booking.eventDates && booking.eventDates.length > 0
+                  ? booking.eventDates.map((d, i) => `<span style="display:inline-block; margin:2px; padding:2px 8px; background:#1e293b; border-radius:4px; font-weight:bold; color:#fde68a;">Day ${i + 1}: ${d}</span>`).join(' ')
+                  : `<strong>${booking.eventDate}</strong>`
+              }
+            </div>
           </div>
           <div class="field-group">
             <div class="label">Time Slot</div>
@@ -164,7 +170,11 @@ const sendCustomerBookingConfirmation = async (booking) => {
           <strong style="font-size: 22px; color: #fbbf24; letter-spacing: 2px;">${booking.bookingReference}</strong>
         </div>
         <p style="font-size: 13px; color: #cbd5e1;"><strong>Event:</strong> ${booking.eventType} (${booking.packageName})</p>
-        <p style="font-size: 13px; color: #cbd5e1;"><strong>Date & Time:</strong> ${booking.eventDate} • ${booking.eventTimeSlot}</p>
+        <p style="font-size: 13px; color: #cbd5e1;"><strong>${booking.isMultiDay ? 'Celebration Dates (' + (booking.totalDays || 1) + ' Days):' : 'Date:'}</strong> ${
+          booking.isMultiDay && booking.eventDates && booking.eventDates.length > 0
+            ? booking.eventDates.join(', ')
+            : booking.eventDate
+        } • ${booking.eventTimeSlot}</p>
         <p style="font-size: 13px; color: #cbd5e1;"><strong>Venue:</strong> ${booking.eventLocation}</p>
         <p style="font-size: 12px; color: #94a3b8; margin-top: 24px; border-top: 1px solid #374151; padding-top: 16px;">
           Our lead photographer will contact you at <strong>${booking.customerPhone}</strong> within 24 hours. For urgent questions, call/WhatsApp us at <strong>+91 9608782890</strong>.

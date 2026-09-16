@@ -303,10 +303,23 @@ const AdminBookings = () => {
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <div className="text-white font-mono font-bold">{b.eventDate}</div>
-                      <div className="text-amber-400/80 text-[11px] truncate max-w-[160px]">
-                        {b.eventTimeSlot}
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-white font-mono font-bold">{b.eventDate}</span>
+                        {b.isMultiDay && (
+                          <span className="px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 font-bold text-[9px] border border-amber-400/40">
+                            {b.totalDays || b.eventDates?.length || 1} Days
+                          </span>
+                        )}
                       </div>
+                      {b.isMultiDay && b.eventDates && b.eventDates.length > 1 ? (
+                        <div className="text-[10px] text-slate-400 truncate max-w-[180px]">
+                          {b.eventDates.join(', ')}
+                        </div>
+                      ) : (
+                        <div className="text-amber-400/80 text-[11px] truncate max-w-[160px]">
+                          {b.eventTimeSlot}
+                        </div>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -533,9 +546,21 @@ const AdminBookings = () => {
               </div>
 
               <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
-                <span className="text-slate-400 uppercase text-[10px] block">Date & Time</span>
-                <span className="text-sm font-semibold text-white font-mono">{selectedBooking.eventDate}</span>
-                <div className="text-slate-300 mt-1">{selectedBooking.eventTimeSlot}</div>
+                <span className="text-slate-400 uppercase text-[10px] block">
+                  {selectedBooking.isMultiDay ? `Celebration Dates (${selectedBooking.totalDays || selectedBooking.eventDates?.length || 1} Days)` : 'Date & Time'}
+                </span>
+                {selectedBooking.isMultiDay && selectedBooking.eventDates && selectedBooking.eventDates.length > 0 ? (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {selectedBooking.eventDates.map((d, i) => (
+                      <span key={d} className="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-mono text-[10px] font-bold">
+                        D{i + 1}: {d}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-sm font-semibold text-white font-mono">{selectedBooking.eventDate}</span>
+                )}
+                <div className="text-slate-300 mt-1 text-[11px]">{selectedBooking.eventTimeSlot}</div>
               </div>
 
               <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">

@@ -33,6 +33,9 @@ const createBooking = async (req, res, next) => {
       packageId,
       packageName,
       packagePrice,
+      isMultiDay = false,
+      totalDays = 1,
+      eventDates = [],
       eventDate,
       eventTimeSlot,
       customerName,
@@ -59,6 +62,14 @@ const createBooking = async (req, res, next) => {
       });
     }
 
+    // Determine normalized array of dates to reserve
+    let allDatesToReserve = [];
+    if (isMultiDay && Array.isArray(eventDates) && eventDates.length > 0) {
+      allDatesToReserve = Array.from(new Set(eventDates.filter(Boolean)));
+    } else {
+      allDatesToReserve = [eventDate];
+    }
+
     // Validate and sanitize phone number (must be 10 digits)
     const cleanPhone = String(customerPhone).replace(/\D/g, '');
     const finalPhone = cleanPhone.length === 12 && cleanPhone.startsWith('91') ? cleanPhone.slice(2) : cleanPhone;
@@ -78,30 +89,48 @@ const createBooking = async (req, res, next) => {
       });
     }
 
-    // Check if the date is in the past
-    const selectedDate = new Date(eventDate);
+    // Check if any selected date is in the past
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (selectedDate < today) {
-      return res.status(400).json({
-        success: false,
-        message: 'Event date cannot be in the past.',
-      });
+
+    for (const d of allDatesToReserve) {
+      const parsedDate = new Date(d);
+      if (parsedDate < today) {
+        return res.status(400).json({
+          success: false,
+          message: `Event date (${d}) cannot be in the past.`,
+        });
+      }
     }
 
-    // DOUBLE BOOKING PREVENTION:
-    // Check if a Confirmed booking already exists for the exact same date and time slot
-    const existingConfirmed = await Booking.findOne({
-      eventDate,
-      eventTimeSlot,
+    // MULTI-DATE DOUBLE BOOKING CONFLICT CHECK:
+    // Check if a Confirmed booking exists for ANY of the selected dates matching slot or full day
+    const conflictingBookings = await Booking.find({
       status: 'Confirmed',
+      $or: [
+        { eventDate: { $in: allDatesToReserve } },
+        { eventDates: { $in: allDatesToReserve } },
+      ],
     });
 
-    if (existingConfirmed) {
-      return res.status(409).json({
-        success: false,
-        message: 'This date/time is already booked. Please select another time.',
-      });
+    for (const conf of conflictingBookings) {
+      // Find matching date
+      const confDates = conf.isMultiDay && conf.eventDates && conf.eventDates.length > 0 ? conf.eventDates : [conf.eventDate];
+      const overlapDate = allDatesToReserve.find((d) => confDates.includes(d));
+
+      if (overlapDate) {
+        // Check slot conflict
+        if (
+          conf.eventTimeSlot === 'Full Day (All Day Coverage)' ||
+          eventTimeSlot === 'Full Day (All Day Coverage)' ||
+          conf.eventTimeSlot === eventTimeSlot
+        ) {
+          return res.status(409).json({
+            success: false,
+            message: `Date ${overlapDate} is already booked for ${conf.eventTimeSlot}. Please select another date or contact the admin with a query message to get a reply within 24 hours.`,
+          });
+        }
+      }
     }
 
     // Generate unique booking reference
@@ -112,13 +141,18 @@ const createBooking = async (req, res, next) => {
       collisionCheck = await Booking.findOne({ bookingReference });
     }
 
+    const calculatedDays = isMultiDay ? Math.max(allDatesToReserve.length, totalDays || 1) : 1;
+
     const newBooking = await Booking.create({
       bookingReference,
       eventType,
       packageId: packageId || null,
       packageName,
       packagePrice: Number(packagePrice),
-      eventDate,
+      isMultiDay: Boolean(isMultiDay),
+      totalDays: calculatedDays,
+      eventDates: allDatesToReserve,
+      eventDate: allDatesToReserve[0] || eventDate,
       eventTimeSlot,
       customerName: customerName.trim(),
       customerPhone: finalPhone,
@@ -231,24 +265,35 @@ const getBookedDates = async (req, res, next) => {
     const endDateStr = endDate.toISOString().split('T')[0];
 
     const bookings = await Booking.find({
-      eventDate: { $gte: startDate, $lte: endDateStr },
       status: 'Confirmed',
-    }).select('eventDate eventTimeSlot customerName eventType packageName isBlockedDate');
+      $or: [
+        { eventDate: { $gte: startDate, $lte: endDateStr } },
+        { eventDates: { $elemMatch: { $gte: startDate, $lte: endDateStr } } },
+      ],
+    }).select('eventDate eventDates isMultiDay eventTimeSlot customerName eventType packageName isBlockedDate');
 
     const dateMap = {};
     for (const b of bookings) {
-      if (!dateMap[b.eventDate]) {
-        dateMap[b.eventDate] = {
-          date: b.eventDate,
-          rawSlots: [],
-          reasons: [],
-        };
+      const datesToProcess = b.isMultiDay && b.eventDates && b.eventDates.length > 0
+        ? b.eventDates
+        : [b.eventDate];
+
+      for (const d of datesToProcess) {
+        if (!d || d < startDate || d > endDateStr) continue;
+
+        if (!dateMap[d]) {
+          dateMap[d] = {
+            date: d,
+            rawSlots: [],
+            reasons: [],
+          };
+        }
+        dateMap[d].rawSlots.push(b.eventTimeSlot);
+        const label = b.isBlockedDate
+          ? (b.customerName || 'Studio Reserved')
+          : `${b.eventType || 'Event'} Booking${b.isMultiDay ? ' (Multi-Day)' : ''}`;
+        dateMap[d].reasons.push(label);
       }
-      dateMap[b.eventDate].rawSlots.push(b.eventTimeSlot);
-      const label = b.isBlockedDate
-        ? (b.customerName || 'Studio Reserved')
-        : `${b.eventType || 'Event'} Booking`;
-      dateMap[b.eventDate].reasons.push(label);
     }
 
     const bookedDates = Object.values(dateMap).map((d) => {

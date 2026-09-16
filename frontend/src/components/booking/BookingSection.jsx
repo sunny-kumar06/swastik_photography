@@ -23,6 +23,10 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
     packageId: preselectedPackage?._id || null,
     packageName: preselectedPackage?.name || 'Wedding Premium',
     packagePrice: preselectedPackage?.price || 25000,
+    basePackagePrice: preselectedPackage?.price || 25000,
+    isMultiDay: false,
+    totalDays: 1,
+    eventDates: [],
     eventDate: '',
     eventTimeSlot: '',
     customerName: '',
@@ -43,9 +47,20 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
       return;
     }
     if (currentStep === 3) {
-      if (!bookingData.eventDate || !bookingData.eventTimeSlot) {
+      if (bookingData.isMultiDay) {
+        if (!bookingData.eventDates || bookingData.eventDates.length < 2) {
+          setErrorMsg('Please select at least 2 event dates for your multi-day celebration.');
+          return;
+        }
+      } else {
+        if (!bookingData.eventDate) {
+          setErrorMsg('Please select an event date to continue.');
+          return;
+        }
+      }
+      if (!bookingData.eventTimeSlot) {
         setErrorMsg(
-          'This date is already booked. Please choose another date, or contact the admin with a query message to get a reply within 24 hours.'
+          'Please select an available time slot for your event, or write a query message to admin.'
         );
         return;
       }
@@ -234,8 +249,33 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
 
               {currentStep === 3 && (
                 <StepDateTime
+                  eventType={bookingData.eventType}
+                  isMultiDay={bookingData.isMultiDay}
+                  eventDates={bookingData.eventDates}
                   eventDate={bookingData.eventDate}
                   eventTimeSlot={bookingData.eventTimeSlot}
+                  onChangeMultiDayMode={(isMulti) => {
+                    const basePrice = bookingData.basePackagePrice || bookingData.packagePrice;
+                    const days = isMulti ? Math.max(bookingData.eventDates?.length || 3, 2) : 1;
+                    setBookingData((p) => ({
+                      ...p,
+                      isMultiDay: isMulti,
+                      totalDays: days,
+                      basePackagePrice: basePrice,
+                      packagePrice: isMulti ? basePrice * days : basePrice,
+                    }));
+                  }}
+                  onChangeDates={(dates) => {
+                    const basePrice = bookingData.basePackagePrice || (bookingData.isMultiDay ? bookingData.packagePrice / (bookingData.totalDays || 1) : bookingData.packagePrice);
+                    const days = Math.max(dates.length, 1);
+                    setBookingData((p) => ({
+                      ...p,
+                      eventDates: dates,
+                      totalDays: days,
+                      basePackagePrice: basePrice,
+                      packagePrice: p.isMultiDay ? basePrice * days : basePrice,
+                    }));
+                  }}
                   onChangeDate={(date) => setBookingData((p) => ({ ...p, eventDate: date }))}
                   onChangeSlot={(slot) => setBookingData((p) => ({ ...p, eventTimeSlot: slot }))}
                 />

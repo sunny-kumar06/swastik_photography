@@ -26,8 +26,21 @@ const bookingSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Package price is required'],
     },
+    isMultiDay: {
+      type: Boolean,
+      default: false,
+    },
+    totalDays: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+    eventDates: {
+      type: [String], // Array of YYYY-MM-DD
+      default: [],
+    },
     eventDate: {
-      type: String, // Format: YYYY-MM-DD
+      type: String, // Format: YYYY-MM-DD (Primary / Start date)
       required: [true, 'Event date is required'],
     },
     eventTimeSlot: {
