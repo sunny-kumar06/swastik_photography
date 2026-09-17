@@ -4,9 +4,9 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-const getCloudName = () => (process.env.CLOUDINARY_CLOUD_NAME || '').trim();
-const getApiKey = () => (process.env.CLOUDINARY_API_KEY || '').trim();
-const getApiSecret = () => (process.env.CLOUDINARY_API_SECRET || '').trim();
+const getCloudName = () => (process.env.CLOUDINARY_CLOUD_NAME || 'yvhnwwux').trim();
+const getApiKey = () => (process.env.CLOUDINARY_API_KEY || '527145133477768').trim();
+const getApiSecret = () => (process.env.CLOUDINARY_API_SECRET || 'wqHX0FAY__WolnH8EkEj7hfAVk0').trim();
 
 const isCloudinaryConfigured = () => {
   return Boolean(getCloudName() && getApiKey() && getApiSecret());

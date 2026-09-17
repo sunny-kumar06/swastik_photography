@@ -71,6 +71,13 @@ const OptimizedImage = ({
   useEffect(() => {
     setIsLoaded(false);
     setHasError(false);
+
+    // Failsafe timeout: If an image hangs or takes over 3 seconds to respond, reveal image/fallback immediately
+    const timer = setTimeout(() => {
+      setIsLoaded(true);
+    }, 3000);
+
+    return () => clearTimeout(timer);
   }, [src, alt]);
 
   const chosenFallback = fallbackSrc || getDeterministicFallback(alt || src);
