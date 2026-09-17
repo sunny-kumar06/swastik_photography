@@ -18,6 +18,8 @@ const defaultSettings = {
   aboutTitle: 'Capturing Timeless Stories With Cinematic Artistry',
   aboutText:
     'At Swastik Photography, we believe every frame tells a unique story. With over 8 years of passionate dedication, cutting-edge camera gear, and an editorial eye for raw emotion, we turn fleeting celebrations into timeless cinematic art. From intimate vows to grand weddings, we capture the soul of your most cherished moments.',
+  aboutImage: 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&q=75&w=1000',
+  heroImage: '',
   experienceYears: 8,
   eventsCount: 650,
   happyClientsCount: 1200,

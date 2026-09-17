@@ -65,6 +65,14 @@ const settingsSchema = new mongoose.Schema(
       type: String,
       default: 'At Swastik Photography, we believe every frame tells a unique story. With years of passionate dedication, cutting-edge camera gear, and an editorial eye for raw emotion, we turn fleeting celebrations into timeless cinematic art. From intimate vows to grand weddings, we capture the soul of your most cherished moments.',
     },
+    aboutImage: {
+      type: String,
+      default: 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&q=75&w=1000',
+    },
+    heroImage: {
+      type: String,
+      default: '',
+    },
     experienceYears: {
       type: Number,
       default: 8,

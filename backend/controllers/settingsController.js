@@ -18,6 +18,8 @@ const DEFAULT_SETTINGS = {
   aboutTitle: 'Capturing Timeless Stories With Cinematic Artistry',
   aboutText:
     'At Swastik Photography, we believe every frame tells a unique story. With years of passionate dedication, cutting-edge camera gear, and an editorial eye for raw emotion, we turn fleeting celebrations into timeless cinematic art. From intimate vows to grand weddings, we capture the soul of your most cherished moments.',
+  aboutImage: 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&q=75&w=1000',
+  heroImage: '',
   experienceYears: 8,
   eventsCount: 650,
   happyClientsCount: 1200,
@@ -123,6 +125,29 @@ const updateSettings = async (req, res, next) => {
     if (heroSubtitle) settings.heroSubtitle = heroSubtitle.trim();
     if (aboutTitle) settings.aboutTitle = aboutTitle.trim();
     if (aboutText) settings.aboutText = aboutText.trim();
+
+    // Handle files if uploaded via multipart
+    if (req.files) {
+      const { isCloudinaryConfigured } = require('../config/cloudinary');
+      if (req.files.aboutImage && req.files.aboutImage[0]) {
+        const file = req.files.aboutImage[0];
+        const filePath = file.path || file.secure_url;
+        settings.aboutImage = isCloudinaryConfigured() && filePath ? filePath : `/uploads/${file.filename}`;
+      }
+      if (req.files.heroImage && req.files.heroImage[0]) {
+        const file = req.files.heroImage[0];
+        const filePath = file.path || file.secure_url;
+        settings.heroImage = isCloudinaryConfigured() && filePath ? filePath : `/uploads/${file.filename}`;
+      }
+    }
+
+    if (req.body.aboutImage !== undefined) {
+      settings.aboutImage = String(req.body.aboutImage).trim();
+    }
+    if (req.body.heroImage !== undefined) {
+      settings.heroImage = String(req.body.heroImage).trim();
+    }
+
     if (experienceYears !== undefined) settings.experienceYears = Number(experienceYears);
     if (eventsCount !== undefined) settings.eventsCount = Number(eventsCount);
     if (happyClientsCount !== undefined) settings.happyClientsCount = Number(happyClientsCount);
