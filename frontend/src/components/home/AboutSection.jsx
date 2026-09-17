@@ -50,7 +50,8 @@ const AboutSection = () => {
               {/* Main Portrait Frame */}
               <div className="relative rounded-2xl overflow-hidden border border-slate-800 shadow-2xl z-10 group h-[450px] sm:h-[500px]">
                 <OptimizedImage
-                  src={settings.aboutImage || 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&q=75&w=1000'}
+                  key={settings.aboutImage}
+                  src={settings.aboutImage && settings.aboutImage !== '[object Object]' ? settings.aboutImage : 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&q=75&w=1000'}
                   alt="Swastik Photography Master Behind the Lens"
                   width={1000}
                   quality={75}

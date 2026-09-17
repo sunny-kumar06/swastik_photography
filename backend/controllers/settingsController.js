@@ -36,6 +36,8 @@ const getSettings = async (req, res, next) => {
     let settings = await Settings.findOne();
     if (!settings) {
       settings = await Settings.create(DEFAULT_SETTINGS);
+    } else if (!settings.aboutImage || settings.aboutImage === '[object Object]' || settings.aboutImage === 'undefined') {
+      settings.aboutImage = DEFAULT_SETTINGS.aboutImage;
     }
     res.json({ success: true, data: settings });
   } catch (error) {
@@ -127,25 +129,35 @@ const updateSettings = async (req, res, next) => {
     if (aboutText) settings.aboutText = aboutText.trim();
 
     // Handle files if uploaded via multipart
+    let aboutFileUploaded = false;
+    let heroFileUploaded = false;
     if (req.files) {
       const { isCloudinaryConfigured } = require('../config/cloudinary');
       if (req.files.aboutImage && req.files.aboutImage[0]) {
         const file = req.files.aboutImage[0];
         const filePath = file.path || file.secure_url;
         settings.aboutImage = isCloudinaryConfigured() && filePath ? filePath : `/uploads/${file.filename}`;
+        aboutFileUploaded = true;
       }
       if (req.files.heroImage && req.files.heroImage[0]) {
         const file = req.files.heroImage[0];
         const filePath = file.path || file.secure_url;
         settings.heroImage = isCloudinaryConfigured() && filePath ? filePath : `/uploads/${file.filename}`;
+        heroFileUploaded = true;
       }
     }
 
-    if (req.body.aboutImage !== undefined) {
-      settings.aboutImage = String(req.body.aboutImage).trim();
+    if (!aboutFileUploaded && req.body.aboutImage !== undefined) {
+      const val = String(req.body.aboutImage).trim();
+      if (val && val !== '[object Object]' && val !== 'undefined') {
+        settings.aboutImage = val;
+      }
     }
-    if (req.body.heroImage !== undefined) {
-      settings.heroImage = String(req.body.heroImage).trim();
+    if (!heroFileUploaded && req.body.heroImage !== undefined) {
+      const val = String(req.body.heroImage).trim();
+      if (val && val !== '[object Object]' && val !== 'undefined') {
+        settings.heroImage = val;
+      }
     }
 
     if (experienceYears !== undefined) settings.experienceYears = Number(experienceYears);

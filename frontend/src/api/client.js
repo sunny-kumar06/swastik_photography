@@ -64,7 +64,14 @@ export const authApi = {
 // Settings endpoints
 export const settingsApi = {
   get: () => api.get('/settings'),
-  update: (data) => api.put('/settings', data),
+  update: (data) => {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    return api.put(
+      '/settings',
+      data,
+      isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {}
+    );
+  },
 };
 
 // Gallery endpoints

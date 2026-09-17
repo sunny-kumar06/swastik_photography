@@ -147,6 +147,7 @@ const AdminSettings = () => {
 
       if (res.data && res.data.success) {
         updateSettingsState(res.data.data);
+        setFormData({ ...res.data.data });
         handleClearAboutFile();
         setStatusMsg({
           type: 'success',
