@@ -28,7 +28,7 @@ const GallerySection = () => {
   useEffect(() => {
     const fetchGallery = async () => {
       try {
-        const res = await galleryApi.getAll();
+        const res = await galleryApi.getAll({ _t: Date.now() });
         if (res.data && res.data.data) {
           setPhotos(res.data.data);
         }
@@ -113,7 +113,7 @@ const GallerySection = () => {
               <AnimatePresence>
                 {displayedPhotos.map((photo, index) => (
                   <motion.div
-                    key={photo._id || photo.imageUrl}
+                    key={`${photo._id}_${photo.imageUrl}`}
                     layout
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}

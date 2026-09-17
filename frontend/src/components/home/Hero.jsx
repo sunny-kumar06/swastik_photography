@@ -1,7 +1,8 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Image as ImageIcon, ChevronDown, Sparkles, Award, Star } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
+import { getMediaUrl } from '../../api/client';
 import AnimatedBrand from '../common/AnimatedBrand';
 
 const serviceTags = [
@@ -13,8 +14,27 @@ const serviceTags = [
   'Portraits',
 ];
 
+const DEFAULT_HERO_SLIDES = [
+  'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=1920',
+  'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=1920',
+  'https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&q=80&w=1920',
+  'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=1920',
+];
+
 const Hero = ({ onBookNowClick }) => {
   const { settings } = useSettings();
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+
+  const heroSlides = settings?.heroImage
+    ? [getMediaUrl(settings.heroImage), ...DEFAULT_HERO_SLIDES]
+    : DEFAULT_HERO_SLIDES;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlideIndex((prev) => (prev + 1) % heroSlides.length);
+    }, 6500);
+    return () => clearInterval(interval);
+  }, [heroSlides.length]);
 
   const handleBookingScroll = () => {
     if (onBookNowClick) {
@@ -32,20 +52,24 @@ const Hero = ({ onBookNowClick }) => {
 
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
-      {/* Background with Slow Zoom Animation */}
-      <motion.div
-        className="absolute inset-0 z-0 bg-cover bg-center"
-        style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=1920')`,
-        }}
-        initial={{ scale: 1.08 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 12, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
-      >
-        {/* Dark Cinematic Vignette & Gradient Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/80 to-brand-dark/65" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#07090e_90%)]" />
-      </motion.div>
+      {/* Background Slideshow with Smooth Crossfade and Subtle Zoom */}
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={heroSlides[currentSlideIndex]}
+          className="absolute inset-0 z-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `url('${heroSlides[currentSlideIndex]}')`,
+          }}
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1.5, ease: 'easeInOut' }}
+        />
+      </AnimatePresence>
+
+      {/* Dark Cinematic Vignette & Gradient Overlays */}
+      <div className="absolute inset-0 z-[1] bg-gradient-to-t from-brand-dark via-brand-dark/80 to-brand-dark/65 pointer-events-none" />
+      <div className="absolute inset-0 z-[1] bg-[radial-gradient(circle_at_center,transparent_0%,#07090e_90%)] pointer-events-none" />
 
       {/* Floating Sparkles & Light Orbs */}
       <div className="absolute top-1/4 left-10 w-72 h-72 bg-brand-accent/15 rounded-full blur-3xl pointer-events-none animate-pulse-slow" />

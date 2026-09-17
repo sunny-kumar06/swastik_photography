@@ -55,15 +55,16 @@ const uploadPhoto = async (req, res, next) => {
     let cloudinaryId = '';
 
     if (req.file) {
-      if (isCloudinaryConfigured() && req.file.path) {
-        imageUrl = req.file.path;
-        cloudinaryId = req.file.filename;
+      const filePath = req.file.path || req.file.secure_url;
+      if (isCloudinaryConfigured() && filePath) {
+        imageUrl = filePath;
+        cloudinaryId = req.file.filename || '';
       } else {
         // Local file fallback
         imageUrl = `/uploads/${req.file.filename}`;
         cloudinaryId = `local_${req.file.filename}`;
       }
-    } else if (customImageUrl) {
+    } else if (customImageUrl && customImageUrl.trim()) {
       imageUrl = customImageUrl.trim();
       cloudinaryId = '';
     } else {
@@ -99,7 +100,7 @@ const uploadPhoto = async (req, res, next) => {
 // @access  Private (Admin)
 const updatePhoto = async (req, res, next) => {
   try {
-    const { title, category, description, isFeatured, aspectRatio, order } = req.body;
+    const { title, category, description, isFeatured, aspectRatio, order, customImageUrl } = req.body;
     const photo = await Gallery.findById(req.params.id);
 
     if (!photo) {
@@ -113,15 +114,25 @@ const updatePhoto = async (req, res, next) => {
     if (aspectRatio !== undefined) photo.aspectRatio = aspectRatio;
     if (order !== undefined) photo.order = Number(order);
 
+    // If custom image URL is provided in edit
+    if (customImageUrl && customImageUrl.trim()) {
+      if (photo.cloudinaryId) {
+        await deleteImage(photo.cloudinaryId);
+      }
+      photo.imageUrl = customImageUrl.trim();
+      photo.cloudinaryId = '';
+    }
+
     // If a new file was uploaded during edit
     if (req.file) {
       // Remove old image
       if (photo.cloudinaryId) {
         await deleteImage(photo.cloudinaryId);
       }
-      if (isCloudinaryConfigured() && req.file.path) {
-        photo.imageUrl = req.file.path;
-        photo.cloudinaryId = req.file.filename;
+      const filePath = req.file.path || req.file.secure_url;
+      if (isCloudinaryConfigured() && filePath) {
+        photo.imageUrl = filePath;
+        photo.cloudinaryId = req.file.filename || '';
       } else {
         photo.imageUrl = `/uploads/${req.file.filename}`;
         photo.cloudinaryId = `local_${req.file.filename}`;

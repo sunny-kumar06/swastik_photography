@@ -36,9 +36,10 @@ const createService = async (req, res, next) => {
     let cloudinaryId = '';
 
     if (req.file) {
-      if (isCloudinaryConfigured() && req.file.path) {
-        image = req.file.path;
-        cloudinaryId = req.file.filename;
+      const filePath = req.file.path || req.file.secure_url;
+      if (isCloudinaryConfigured() && filePath) {
+        image = filePath;
+        cloudinaryId = req.file.filename || '';
       } else {
         image = `/uploads/${req.file.filename}`;
         cloudinaryId = `local_${req.file.filename}`;
@@ -109,15 +110,20 @@ const updateService = async (req, res, next) => {
       if (service.cloudinaryId) {
         await deleteImage(service.cloudinaryId);
       }
-      if (isCloudinaryConfigured() && req.file.path) {
-        service.image = req.file.path;
-        service.cloudinaryId = req.file.filename;
+      const filePath = req.file.path || req.file.secure_url;
+      if (isCloudinaryConfigured() && filePath) {
+        service.image = filePath;
+        service.cloudinaryId = req.file.filename || '';
       } else {
         service.image = `/uploads/${req.file.filename}`;
         service.cloudinaryId = `local_${req.file.filename}`;
       }
-    } else if (customImage) {
-      service.image = customImage;
+    } else if (customImage && customImage.trim()) {
+      if (service.cloudinaryId) {
+        await deleteImage(service.cloudinaryId);
+      }
+      service.image = customImage.trim();
+      service.cloudinaryId = '';
     }
 
     const updatedService = await service.save();

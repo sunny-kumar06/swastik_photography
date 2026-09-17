@@ -4,21 +4,23 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+const getCloudName = () => (process.env.CLOUDINARY_CLOUD_NAME || '').trim();
+const getApiKey = () => (process.env.CLOUDINARY_API_KEY || '').trim();
+const getApiSecret = () => (process.env.CLOUDINARY_API_SECRET || '').trim();
+
 const isCloudinaryConfigured = () => {
-  return (
-    process.env.CLOUDINARY_CLOUD_NAME &&
-    process.env.CLOUDINARY_API_KEY &&
-    process.env.CLOUDINARY_API_SECRET &&
-    process.env.CLOUDINARY_CLOUD_NAME.trim() !== ''
-  );
+  return Boolean(getCloudName() && getApiKey() && getApiSecret());
 };
 
 if (isCloudinaryConfigured()) {
   cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
+    cloud_name: getCloudName(),
+    api_key: getApiKey(),
+    api_secret: getApiSecret(),
   });
+  console.log('[Cloudinary]: Cloud storage successfully initialized for', getCloudName());
+} else {
+  console.warn('[Cloudinary Warning]: Cloudinary credentials not fully provided. Falling back to local disk.');
 }
 
 // Local storage fallback directory

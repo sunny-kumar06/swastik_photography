@@ -48,7 +48,7 @@ const AdminGallery = () => {
   const fetchGallery = async () => {
     setLoading(true);
     try {
-      const res = await galleryApi.getAll();
+      const res = await galleryApi.getAll({ _t: Date.now() });
       if (res.data && res.data.data) {
         setPhotos(res.data.data);
       }
@@ -182,7 +182,8 @@ const AdminGallery = () => {
         });
       }
       setUploadModalOpen(false);
-      fetchGallery();
+      handleClearSelectedFile();
+      await fetchGallery();
     } catch (err) {
       console.error('[Upload error]:', err);
       setStatusMsg({
@@ -308,7 +309,7 @@ const AdminGallery = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {filteredPhotos.map((photo) => (
             <div
-              key={photo._id}
+              key={`${photo._id}_${photo.imageUrl}`}
               className="group relative rounded-2xl overflow-hidden bg-brand-card border border-slate-800 hover:border-slate-700 shadow-xl flex flex-col justify-between transition-all hover:shadow-2xl"
             >
               {/* Image Preview with Fallback */}
