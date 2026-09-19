@@ -1,16 +1,80 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230b1120' stroke='%23e11d48' stroke-width='4'/><text x='50%' y='58%' font-size='46' font-family='serif' font-weight='bold' fill='%23f59e0b' text-anchor='middle'>S</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-    
+
+    <!-- Instant client-side redirect from old Vercel subdomain to custom domain -->
+    <script>
+      if (window.location.hostname === 'swastik-photography.vercel.app') {
+        window.location.replace('https://swastikphotography.in' + window.location.pathname + window.location.search + window.location.hash);
+      }
+    </script>
+
+    <!-- Canonical URL (Instructs Google to index swastikphotography.in as the primary authoritative source) -->
+    <link rel="canonical" href="https://swastikphotography.in/" />
+
     <!-- Primary Meta Tags -->
-    <title>Swastik Photography | Wedding & Event Photography</title>
-    <meta name="title" content="Swastik Photography | Wedding & Event Photography" />
-    <meta name="description" content="Swastik Photography provides professional wedding, pre-wedding, birthday, engagement, portrait photography and cinematic videography." />
-    <meta name="keywords" content="Swastik Photography, Wedding Photographer, Pre-Wedding Shoot, Cinematic Wedding Video, Event Photography, Indian Wedding Photography" />
+    <title>Swastik Photography | Luxury Wedding & Cinematic Films | Official Site</title>
+    <meta name="title" content="Swastik Photography | Luxury Wedding & Cinematic Films | Official Site" />
+    <meta name="description" content="Official site of Swastik Photography. Award-winning wedding, pre-wedding, and cinematic videography studio capturing timeless celebrations across Bihar, Jharkhand and pan-India." />
+    <meta name="keywords" content="Swastik Photography, swastikphotography.in, Wedding Photographer Bihar, Wedding Photographer Jharkhand, Candid Wedding Photography, Pre-Wedding Shoot, Cinematic Wedding Video, Royal Wedding Films" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="theme-color" content="#07090e" />
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://swastikphotography.in/" />
+    <meta property="og:title" content="Swastik Photography | Luxury Wedding & Cinematic Films" />
+    <meta property="og:description" content="Award-winning wedding, pre-wedding, and cinematic videography studio capturing timeless celebrations with cinema artistry." />
+    <meta property="og:image" content="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=1200" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Swastik Photography" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://swastikphotography.in/" />
+    <meta name="twitter:title" content="Swastik Photography | Luxury Wedding & Cinematic Films" />
+    <meta name="twitter:description" content="Award-winning wedding, pre-wedding, and cinematic videography studio capturing timeless celebrations with cinema artistry." />
+    <meta name="twitter:image" content="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=1200" />
+
+    <!-- Structured Data (Schema.org JSON-LD for Google Rich Results) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ProfessionalService",
+      "name": "Swastik Photography",
+      "image": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=1200",
+      "@id": "https://swastikphotography.in/#business",
+      "url": "https://swastikphotography.in/",
+      "telephone": "+919608782890",
+      "priceRange": "₹₹",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Studio Swastik, Main Road, City Center",
+        "addressCountry": "IN"
+      },
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ],
+        "opens": "09:00",
+        "closes": "21:00"
+      },
+      "sameAs": [
+        "https://www.instagram.com/swastik__photography__?stkn=MW1iMGR6bDAxbWZudQ=="
+      ]
+    }
+    </script>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
