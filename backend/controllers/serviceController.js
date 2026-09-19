@@ -6,7 +6,8 @@ const { deleteImage, isCloudinaryConfigured } = require('../config/cloudinary');
 // @access  Public
 const getServices = async (req, res, next) => {
   try {
-    const services = await Service.find({ isActive: true }).sort({ order: 1, createdAt: 1 });
+    const services = await Service.find({ isActive: true }).sort({ order: 1, createdAt: 1 }).lean();
+    res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
     res.json({ success: true, count: services.length, data: services });
   } catch (error) {
     next(error);

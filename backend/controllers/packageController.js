@@ -12,7 +12,8 @@ const getPackages = async (req, res, next) => {
       filter.category = category;
     }
 
-    const packages = await Package.find(filter).sort({ order: 1, price: 1 });
+    const packages = await Package.find(filter).sort({ order: 1, price: 1 }).lean();
+    res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
     res.json({ success: true, count: packages.length, data: packages });
   } catch (error) {
     next(error);

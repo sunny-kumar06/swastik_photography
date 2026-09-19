@@ -2,26 +2,63 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, ChevronLeft, ChevronRight, Quote, Heart } from 'lucide-react';
 import { reviewsApi } from '../../api/client';
+import { getCachedData, setCachedData } from '../../utils/cache';
+
+const DEFAULT_FALLBACK_REVIEWS = [
+  {
+    _id: 'default_rev_1',
+    customerName: 'Aarav & Priya Sharma',
+    eventType: 'Wedding',
+    rating: 5,
+    comment: 'The team at Swastik Photography is exceptional! Every emotion and smile was framed like a royal film. Our family cherishes these photographs every day.',
+    customerPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=70&w=200',
+    eventDate: 'December 2025',
+  },
+  {
+    _id: 'default_rev_2',
+    customerName: 'Rohan & Sneha Verma',
+    eventType: 'Pre-Wedding',
+    rating: 5,
+    comment: 'Our pre-wedding shoot was beyond anything we imagined! The drone perspectives and golden hour lighting were absolutely breathtaking.',
+    customerPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=70&w=200',
+    eventDate: 'January 2026',
+  },
+  {
+    _id: 'default_rev_3',
+    customerName: 'Karan & Ananya Patel',
+    eventType: 'Cinematic Wedding',
+    rating: 5,
+    comment: 'The teaser video literally brought tears of joy to our eyes. Pure cinematic perfection and courteous, punctual team.',
+    customerPhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=70&w=200',
+    eventDate: 'November 2025',
+  },
+];
 
 const ReviewsSection = () => {
-  const [reviews, setReviews] = useState([]);
+  const cachedReviews = getCachedData('reviews_list', null);
+  const [reviews, setReviews] = useState(cachedReviews || DEFAULT_FALLBACK_REVIEWS);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cachedReviews && !DEFAULT_FALLBACK_REVIEWS.length);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchReviews = async () => {
       try {
         const res = await reviewsApi.getAll();
-        if (res.data && res.data.data) {
+        if (res.data && res.data.data && isMounted) {
           setReviews(res.data.data);
+          setCachedData('reviews_list', res.data.data);
         }
       } catch (err) {
         console.error('[Reviews fetch error]:', err.message);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchReviews();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Auto rotate carousel every 6s

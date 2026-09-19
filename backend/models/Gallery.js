@@ -44,5 +44,6 @@ const gallerySchema = new mongoose.Schema(
 );
 
 gallerySchema.index({ category: 1, isFeatured: 1, createdAt: -1 });
+gallerySchema.index({ order: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Gallery', gallerySchema);

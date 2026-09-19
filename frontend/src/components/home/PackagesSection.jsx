@@ -2,28 +2,91 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Star, Sparkles, Clock, ArrowRight } from 'lucide-react';
 import { packagesApi } from '../../api/client';
+import { getCachedData, setCachedData } from '../../utils/cache';
 
 const categories = ['All', 'Wedding', 'Pre-Wedding', 'Birthday'];
 
+const DEFAULT_FALLBACK_PACKAGES = [
+  {
+    _id: 'default_pkg_1',
+    name: 'Wedding Essential',
+    category: 'Wedding',
+    price: 25000,
+    description: 'Perfect for intimate weddings, traditional ceremonies, and reception highlights.',
+    features: [
+      '1 Senior Candid Photographer',
+      '1 Traditional HD Videographer',
+      '200+ High-Res Edited Photos',
+      'Full Highlight Video (10-15 Mins)',
+      'Digital Cloud Gallery (Lifetime Access)',
+      'Delivery within 15 days',
+    ],
+    isPopular: false,
+    deliveryDays: 15,
+  },
+  {
+    _id: 'default_pkg_2',
+    name: 'Wedding Premium Cinema',
+    category: 'Wedding',
+    price: 32000,
+    description: 'Our most sought-after cinematic package for full-scale Indian wedding celebrations.',
+    features: [
+      '2 Senior Candid Photographers',
+      '2 Cinematic Videographers (4K Setup)',
+      'Drone Aerial Cinematography included',
+      'Pre-Wedding Short Session included',
+      '400+ Masterfully Retouched Photos',
+      'Cinematic Wedding Teaser + Full Wedding Film',
+      'Premium Leatherette Photobook (40 Pages)',
+      'Delivery within 15 days',
+    ],
+    isPopular: true,
+    deliveryDays: 15,
+  },
+  {
+    _id: 'default_pkg_3',
+    name: 'Pre-Wedding Romantic',
+    category: 'Pre-Wedding',
+    price: 18000,
+    description: 'Capture your love story in exotic locations before tying the knot.',
+    features: [
+      'Full Day Shoot (2 Scenic Locations)',
+      'Up to 3 Outfit Changes',
+      'Drone Aerial Drone Shots',
+      '50 High-End Magazine Retouched Images',
+      'Cinematic 3-Minute Love Story Video',
+      'Delivery in 10 days',
+    ],
+    isPopular: false,
+    deliveryDays: 10,
+  },
+];
+
 const PackagesSection = ({ onSelectPackageForBooking }) => {
-  const [packages, setPackages] = useState([]);
+  const cachedPackages = getCachedData('packages_list', null);
+  const [packages, setPackages] = useState(cachedPackages || DEFAULT_FALLBACK_PACKAGES);
   const [activeCategory, setActiveCategory] = useState('All');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cachedPackages && !DEFAULT_FALLBACK_PACKAGES.length);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchPackages = async () => {
       try {
         const res = await packagesApi.getAll();
-        if (res.data && res.data.data) {
+        if (res.data && res.data.data && isMounted) {
           setPackages(res.data.data);
+          setCachedData('packages_list', res.data.data);
         }
       } catch (err) {
         console.error('[Packages fetch error]:', err.message);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchPackages();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const formatPrice = (price) => {

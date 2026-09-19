@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { settingsApi } from '../api/client';
+import { getCachedData, setCachedData } from '../utils/cache';
 
 const defaultSettings = {
   businessName: 'Swastik Photography',
@@ -31,14 +32,16 @@ const defaultSettings = {
 const SettingsContext = createContext(null);
 
 export const SettingsProvider = ({ children }) => {
-  const [settings, setSettings] = useState(defaultSettings);
-  const [loading, setLoading] = useState(true);
+  const cachedSettings = getCachedData('website_settings', null);
+  const [settings, setSettings] = useState(cachedSettings || defaultSettings);
+  const [loading, setLoading] = useState(!cachedSettings);
 
   const fetchSettings = async () => {
     try {
       const res = await settingsApi.get();
       if (res.data && res.data.data) {
         setSettings(res.data.data);
+        setCachedData('website_settings', res.data.data);
       }
     } catch (err) {
       console.warn('[Settings fetch fallback to defaults]:', err.message);
@@ -52,7 +55,11 @@ export const SettingsProvider = ({ children }) => {
   }, []);
 
   const updateSettingsState = (newSettings) => {
-    setSettings((prev) => ({ ...prev, ...newSettings }));
+    setSettings((prev) => {
+      const updated = { ...prev, ...newSettings };
+      setCachedData('website_settings', updated);
+      return updated;
+    });
   };
 
   return (

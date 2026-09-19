@@ -5,7 +5,8 @@ const Review = require('../models/Review');
 // @access  Public
 const getReviews = async (req, res, next) => {
   try {
-    const reviews = await Review.find({ isActive: true }).sort({ createdAt: -1 });
+    const reviews = await Review.find({ isActive: true }).sort({ createdAt: -1 }).lean();
+    res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
     res.json({ success: true, count: reviews.length, data: reviews });
   } catch (error) {
     next(error);

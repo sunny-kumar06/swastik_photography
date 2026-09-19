@@ -39,6 +39,7 @@ const getSettings = async (req, res, next) => {
     } else if (!settings.aboutImage || settings.aboutImage === '[object Object]' || settings.aboutImage === 'undefined') {
       settings.aboutImage = DEFAULT_SETTINGS.aboutImage;
     }
+    res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
     res.json({ success: true, data: settings });
   } catch (error) {
     next(error);

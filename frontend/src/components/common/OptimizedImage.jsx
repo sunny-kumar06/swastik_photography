@@ -24,7 +24,7 @@ const getDeterministicFallback = (seedStr) => {
   return DIVERSE_FALLBACKS[index];
 };
 
-export const getOptimizedImageUrl = (url, width = 800, quality = 75) => {
+export const getOptimizedImageUrl = (url, width = 500, quality = 70) => {
   if (!url) return '';
   const mediaUrl = getMediaUrl(url);
 
@@ -45,7 +45,7 @@ export const getOptimizedImageUrl = (url, width = 800, quality = 75) => {
     if (!mediaUrl.includes('/w_') && !mediaUrl.includes('/f_auto')) {
       return mediaUrl.replace(
         '/upload/',
-        '/upload/f_auto,q_auto,w_' + width + ',c_limit/'
+        `/upload/f_auto,q_auto:good,w_${width},c_limit/`
       );
     }
   }
@@ -58,8 +58,8 @@ const OptimizedImage = ({
   alt = '',
   className = '',
   containerClassName = '',
-  width = 800,
-  quality = 75,
+  width = 500,
+  quality = 70,
   priority = false,
   fallbackSrc,
   onClick,

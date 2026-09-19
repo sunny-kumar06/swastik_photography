@@ -4,6 +4,7 @@ import { Maximize2, Sparkles, ChevronDown } from 'lucide-react';
 import { galleryApi, getMediaUrl } from '../../api/client';
 import Lightbox from '../common/Lightbox';
 import OptimizedImage from '../common/OptimizedImage';
+import { getCachedData, setCachedData } from '../../utils/cache';
 
 const categories = [
   'All',
@@ -15,10 +16,62 @@ const categories = [
   'Cinematic',
 ];
 
+const DEFAULT_FALLBACK_PHOTOS = [
+  {
+    _id: 'default_gal_1',
+    title: 'Royal Mandap Vows',
+    category: 'Wedding',
+    imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=70&w=600',
+    description: 'Heartfelt exchange of garlands under twilight glow.',
+    isFeatured: true,
+  },
+  {
+    _id: 'default_gal_2',
+    title: 'Golden Hour Embrace',
+    category: 'Pre-Wedding',
+    imageUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=70&w=600',
+    description: 'Bespoke romantic pre-wedding editorial in hills.',
+    isFeatured: true,
+  },
+  {
+    _id: 'default_gal_3',
+    title: 'Bridal Henna & Elegance',
+    category: 'Wedding',
+    imageUrl: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&q=70&w=600',
+    description: 'Intricate mehendi patterns on bride before the ceremony.',
+    isFeatured: true,
+  },
+  {
+    _id: 'default_gal_4',
+    title: 'Ring Ceremony Radiance',
+    category: 'Engagement',
+    imageUrl: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&q=70&w=600',
+    description: 'Special celebration as couple exchanges rings.',
+    isFeatured: true,
+  },
+  {
+    _id: 'default_gal_5',
+    title: 'Joyful Cake Celebration',
+    category: 'Birthday',
+    imageUrl: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&q=70&w=600',
+    description: 'Full of laughter and sweet family memories.',
+    isFeatured: true,
+  },
+  {
+    _id: 'default_gal_6',
+    title: 'Dramatic Monochrome Silhouette',
+    category: 'Cinematic',
+    imageUrl: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=70&w=600',
+    description: 'Artistic play of shadows and editorial cinematic lights.',
+    isFeatured: true,
+  },
+];
+
 const GallerySection = () => {
-  const [photos, setPhotos] = useState([]);
+  const cachedPhotos = getCachedData('gallery_photos', null);
+  const [photos, setPhotos] = useState(cachedPhotos || DEFAULT_FALLBACK_PHOTOS);
   const [activeCategory, setActiveCategory] = useState('All');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cachedPhotos && !DEFAULT_FALLBACK_PHOTOS.length);
   const [visibleCount, setVisibleCount] = useState(6);
 
   // Lightbox state
@@ -26,19 +79,24 @@ const GallerySection = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchGallery = async () => {
       try {
-        const res = await galleryApi.getAll({ _t: Date.now() });
-        if (res.data && res.data.data) {
+        const res = await galleryApi.getAll();
+        if (res.data && res.data.data && isMounted) {
           setPhotos(res.data.data);
+          setCachedData('gallery_photos', res.data.data);
         }
       } catch (err) {
         console.error('[Gallery fetch error]:', err.message);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchGallery();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const filteredPhotos =
@@ -125,8 +183,9 @@ const GallerySection = () => {
                     <OptimizedImage
                       src={photo.imageUrl}
                       alt={photo.title}
-                      width={800}
-                      quality={75}
+                      width={500}
+                      quality={70}
+                      priority={index < 3}
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                       containerClassName="w-full h-full"
                     />

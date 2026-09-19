@@ -3,25 +3,62 @@ import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, Check } from 'lucide-react';
 import { servicesApi, getMediaUrl } from '../../api/client';
 import OptimizedImage from '../common/OptimizedImage';
+import { getCachedData, setCachedData } from '../../utils/cache';
+
+const DEFAULT_FALLBACK_SERVICES = [
+  {
+    _id: 'default_srv_1',
+    title: 'Wedding Photography',
+    description: 'Comprehensive candid and traditional wedding coverage capturing rituals, smiles, tears of joy, and every royal moment.',
+    startingPrice: 25000,
+    image: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=70&w=600&auto=format&fit=crop',
+    category: 'Wedding',
+    features: ['Candid Photography', 'Traditional Photo & Video', 'Custom Photo Book', 'Online Digital Gallery'],
+  },
+  {
+    _id: 'default_srv_2',
+    title: 'Pre-Wedding Shoot',
+    description: 'Cinematic romantic outdoor shoots at picturesque locations capturing your love story with editorial flair.',
+    startingPrice: 15000,
+    image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?q=70&w=600&auto=format&fit=crop',
+    category: 'Pre-Wedding',
+    features: ['Drone Aerial Cinematography', 'Multi-Location Shoot', 'Outfit Change Coverage', 'Romantic Teaser Video'],
+  },
+  {
+    _id: 'default_srv_3',
+    title: 'Cinematic Wedding Films',
+    description: '4K cinema-grade films with professional color grading, prime lenses, gimbal stabilization, and emotional audio design.',
+    startingPrice: 35000,
+    image: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?q=70&w=600&auto=format&fit=crop',
+    category: 'Cinematography',
+    features: ['4K Ultra HD Master Film', 'Instagram Reels & Teasers', 'Licensed Soundtrack & Foley', 'Raw Footage Hard Drive'],
+  },
+];
 
 const ServicesSection = ({ onSelectServiceForBooking }) => {
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedServices = getCachedData('services_list', null);
+  const [services, setServices] = useState(cachedServices || DEFAULT_FALLBACK_SERVICES);
+  const [loading, setLoading] = useState(!cachedServices && !DEFAULT_FALLBACK_SERVICES.length);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchServices = async () => {
       try {
         const res = await servicesApi.getAll();
-        if (res.data && res.data.data) {
+        if (res.data && res.data.data && isMounted) {
           setServices(res.data.data);
+          setCachedData('services_list', res.data.data);
         }
       } catch (err) {
         console.error('[Services fetch error]:', err.message);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchServices();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const formatPrice = (price) => {
@@ -78,8 +115,9 @@ const ServicesSection = ({ onSelectServiceForBooking }) => {
                   <OptimizedImage
                     src={service.image}
                     alt={service.title}
-                    width={800}
-                    quality={75}
+                    width={500}
+                    quality={70}
+                    priority={index < 3}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     containerClassName="w-full h-full"
                   />
