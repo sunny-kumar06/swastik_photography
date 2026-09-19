@@ -13,16 +13,12 @@ import { sanitizePhoneNumber, isValidPhoneNumber, isValidEmail } from '../../uti
 const stepLabels = ['Event', 'Package', 'Date & Time', 'Details', 'Confirm'];
 
 const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [confirmedResult, setConfirmedResult] = useState(null);
-
   const [bookingData, setBookingData] = useState({
     eventType: preselectedEvent || 'Wedding',
     isCustomEvent: preselectedEvent === 'Custom',
     customEventName: '',
     isPhoneVerified: false,
+    isEmailVerified: false,
     packageId: preselectedPackage?._id || null,
     packageName: preselectedPackage?.name || 'Wedding Premium',
     packagePrice: preselectedPackage?.price || 25000,
@@ -40,66 +36,76 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
     additionalMessage: '',
   });
 
+  const [currentStep, setCurrentStep] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
+  const [confirmedResult, setConfirmedResult] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleDataChange = (field, value) => {
+    setBookingData((prev) => {
+      // If customerEmail is changed and was verified, reset verification
+      if (field === 'customerEmail' && prev.customerEmail !== value) {
+        return { ...prev, [field]: value, isEmailVerified: false, isPhoneVerified: false };
+      }
+      return { ...prev, [field]: value };
+    });
+    setErrorMsg('');
+  };
+
   const handleNextStep = () => {
     setErrorMsg('');
     if (currentStep === 1) {
       if (!bookingData.eventType) {
-        setErrorMsg('Please select an event type to continue.');
+        setErrorMsg('Please select an event type.');
         return;
       }
-      if (bookingData.eventType === 'Custom' && !bookingData.customEventName.trim()) {
-        setErrorMsg('Please enter your custom event name to proceed.');
+      if (bookingData.isCustomEvent && !bookingData.customEventName.trim()) {
+        setErrorMsg('Please enter a name for your custom event celebration.');
         return;
       }
-    }
-    if (currentStep === 2 && !bookingData.packageName) {
-      setErrorMsg('Please select a package to continue.');
-      return;
-    }
-    if (currentStep === 3) {
-      if (bookingData.isMultiDay) {
-        if (!bookingData.eventDates || bookingData.eventDates.length < 2) {
-          setErrorMsg('Please select at least 2 event dates for your multi-day celebration.');
+    } else if (currentStep === 2) {
+      if (!bookingData.isCustomEvent && !bookingData.packageName) {
+        setErrorMsg('Please select a coverage package.');
+        return;
+      }
+    } else if (currentStep === 3) {
+      if (!bookingData.eventDate) {
+        setErrorMsg('Please select your event start date.');
+        return;
+      }
+      if (bookingData.isMultiDay && (!bookingData.eventDates || bookingData.eventDates.length === 0)) {
+        setErrorMsg('Please select at least 2 dates for multi-day coverage.');
+        return;
+      }
+      if (bookingData.isMultiDay && bookingData.dayShifts && bookingData.dayShifts.length > 0) {
+        const missingShift = bookingData.dayShifts.find((ds) => !ds.timeSlot);
+        if (missingShift) {
+          setErrorMsg(`Please select a time shift for date: ${missingShift.date}`);
           return;
         }
-      } else {
-        if (!bookingData.eventDate) {
-          setErrorMsg('Please select an event date to continue.');
-          return;
-        }
       }
-      if (!bookingData.eventTimeSlot && (!bookingData.dayShifts || bookingData.dayShifts.length === 0)) {
-        setErrorMsg(
-          'Please select an available time slot or shift for your event, or write a query message to admin.'
-        );
+      if (!bookingData.isMultiDay && !bookingData.eventTimeSlot) {
+        setErrorMsg('Please select a time shift slot.');
         return;
       }
-    }
-    if (currentStep === 4) {
-      if (
-        !bookingData.customerName ||
-        !bookingData.customerPhone ||
-        !bookingData.customerEmail ||
-        !bookingData.eventLocation
-      ) {
-        setErrorMsg('Please fill in all mandatory customer & location fields.');
+    } else if (currentStep === 4) {
+      if (!bookingData.customerName.trim()) {
+        setErrorMsg('Please enter your full name.');
         return;
       }
-
       const cleanPhone = sanitizePhoneNumber(bookingData.customerPhone);
-      if (cleanPhone.length !== 10) {
-        setErrorMsg('Please enter a valid 10-digit mobile number (e.g. 9608782890).');
+      if (!isValidPhoneNumber(cleanPhone)) {
+        setErrorMsg('Please enter a valid 10-digit mobile number.');
         return;
       }
-
       if (!isValidEmail(bookingData.customerEmail)) {
         setErrorMsg('Please enter a valid email address (e.g. yourname@example.com).');
         return;
       }
 
-      // MANDATORY OTP VERIFICATION
-      if (!bookingData.isPhoneVerified) {
-        setErrorMsg('Please verify your mobile number via OTP before proceeding.');
+      // MANDATORY EMAIL OTP VERIFICATION
+      if (!bookingData.isEmailVerified && !bookingData.isPhoneVerified) {
+        setErrorMsg('Please verify your email address via OTP before proceeding to summary.');
         return;
       }
     }
@@ -380,6 +386,7 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
                     isCustomEvent: false,
                     customEventName: '',
                     isPhoneVerified: false,
+                    isEmailVerified: false,
                     packageId: null,
                     packageName: 'Wedding Premium',
                     packagePrice: 25000,

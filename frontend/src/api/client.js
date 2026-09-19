@@ -130,8 +130,18 @@ export const reviewsApi = {
 // Bookings endpoints
 export const bookingsApi = {
   create: (data) => api.post('/bookings', data),
-  sendOtp: (phone) => api.post('/bookings/send-otp', { phone }),
-  verifyOtp: (phone, otp) => api.post('/bookings/verify-otp', { phone, otp }),
+  sendOtp: (payload) => {
+    const body = typeof payload === 'string'
+      ? (payload.includes('@') ? { email: payload } : { phone: payload })
+      : payload;
+    return api.post('/bookings/send-otp', body);
+  },
+  verifyOtp: (target, otp) => {
+    const body = typeof target === 'object'
+      ? target
+      : (String(target).includes('@') ? { email: target, otp } : { phone: target, otp });
+    return api.post('/bookings/verify-otp', body);
+  },
   checkAvailability: (date) => api.get('/bookings/check-availability', { params: { date } }),
   getBookedDates: (params) => api.get('/bookings/booked-dates', { params }),
   blockDate: (data) => api.post('/bookings/block-date', data),

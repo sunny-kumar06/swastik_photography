@@ -5,6 +5,7 @@ const {
   sendBookingNotification,
   sendCustomerBookingConfirmation,
   sendBookingStatusUpdate,
+  sendOtpEmail,
 } = require('../utils/emailService');
 const {
   sendAdminBookingSMS,
@@ -13,15 +14,15 @@ const {
   sendOtpSMS,
 } = require('../utils/smsService');
 
-// In-memory OTP storage: phone -> { otp, expiresAt, verified, attempts }
+// In-memory OTP storage: key -> { otp, expiresAt, verified, attempts }
 const otpStore = new Map();
 
 // Clean up expired OTPs every 5 minutes
 const otpCleanupTimer = setInterval(() => {
   const now = Date.now();
-  for (const [phone, data] of otpStore.entries()) {
+  for (const [key, data] of otpStore.entries()) {
     if (data.expiresAt < now) {
-      otpStore.delete(phone);
+      otpStore.delete(key);
     }
   }
 }, 5 * 60 * 1000);
@@ -41,22 +42,19 @@ const generateBookingRef = () => {
   return `SWK-${year}-${randomStr}`;
 };
 
-// @desc    Send OTP to customer mobile number for verification (Public)
+// @desc    Send OTP to customer email for verification (Public)
 // @route   POST /api/bookings/send-otp
 // @access  Public
 const sendBookingOtp = async (req, res, next) => {
   try {
-    const { phone } = req.body;
-    if (!phone) {
-      return res.status(400).json({ success: false, message: 'Please provide a 10-digit mobile number' });
-    }
+    const { email, phone, name } = req.body;
+    const targetEmail = email ? String(email).trim().toLowerCase() : null;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-    const cleanPhone = String(phone).replace(/\D/g, '');
-    const finalPhone = cleanPhone.length === 12 && cleanPhone.startsWith('91') ? cleanPhone.slice(2) : cleanPhone;
-    if (finalPhone.length !== 10) {
+    if (!targetEmail || !emailRegex.test(targetEmail)) {
       return res.status(400).json({
         success: false,
-        message: 'Phone number must be a valid 10-digit mobile number.',
+        message: 'Please provide a valid email address to receive the verification OTP.',
       });
     }
 
@@ -64,52 +62,64 @@ const sendBookingOtp = async (req, res, next) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
 
-    otpStore.set(finalPhone, {
+    // Store in otpStore keyed by email
+    otpStore.set(targetEmail, {
       otp,
       expiresAt,
       verified: false,
       attempts: 0,
     });
 
-    // Dispatch OTP via SMS to the customer's phone number
-    const smsResult = await sendOtpSMS({ phone: finalPhone, otp });
+    // Also link phone if provided for backwards compatibility
+    if (phone) {
+      const cleanPhone = String(phone).replace(/\D/g, '').slice(-10);
+      if (cleanPhone.length === 10) {
+        otpStore.set(cleanPhone, {
+          otp,
+          expiresAt,
+          verified: false,
+          attempts: 0,
+        });
+      }
+    }
 
-    console.log(`\n🔑 [MOBILE OTP DISPATCH] Phone: +91 ${finalPhone} | Code: ${otp} (Valid 10 mins) | Carrier Sent: ${smsResult.success}\n`);
+    // Dispatch OTP via Email
+    const emailResult = await sendOtpEmail({ email: targetEmail, otp, name });
+
+    console.log(`\n🔑 [EMAIL OTP DISPATCH] Email: ${targetEmail} | Code: ${otp} (Valid 10 mins) | Dispatched: ${emailResult.success}\n`);
 
     res.json({
       success: true,
-      message: `OTP has been sent to +91 ${finalPhone} via SMS. Please enter the 6-digit code to verify.`,
-      smsDispatched: smsResult.success,
+      message: `Verification code sent to ${targetEmail}. Please check your inbox (or spam folder).`,
+      emailDispatched: emailResult.success,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Verify customer mobile number OTP (Public)
+// @desc    Verify customer email OTP (Public)
 // @route   POST /api/bookings/verify-otp
 // @access  Public
 const verifyBookingOtp = async (req, res, next) => {
   try {
-    const { phone, otp } = req.body;
-    if (!phone || !otp) {
-      return res.status(400).json({ success: false, message: 'Phone and OTP are required' });
+    const { email, phone, otp } = req.body;
+    if ((!email && !phone) || !otp) {
+      return res.status(400).json({ success: false, message: 'Email and OTP code are required' });
     }
 
-    const cleanPhone = String(phone).replace(/\D/g, '');
-    const finalPhone = cleanPhone.length === 12 && cleanPhone.startsWith('91') ? cleanPhone.slice(2) : cleanPhone;
-
-    const record = otpStore.get(finalPhone);
+    const targetKey = email ? String(email).trim().toLowerCase() : String(phone).replace(/\D/g, '').slice(-10);
+    const record = otpStore.get(targetKey);
 
     if (!record) {
       return res.status(400).json({
         success: false,
-        message: 'No OTP requested for this phone number or OTP has expired. Please request a new OTP.',
+        message: 'No OTP requested for this email or OTP has expired. Please request a new OTP.',
       });
     }
 
     if (Date.now() > record.expiresAt) {
-      otpStore.delete(finalPhone);
+      otpStore.delete(targetKey);
       return res.status(400).json({
         success: false,
         message: 'OTP has expired. Please request a new OTP.',
@@ -117,7 +127,7 @@ const verifyBookingOtp = async (req, res, next) => {
     }
 
     if (record.attempts >= 5) {
-      otpStore.delete(finalPhone);
+      otpStore.delete(targetKey);
       return res.status(429).json({
         success: false,
         message: 'Too many incorrect attempts. Please request a new OTP.',
@@ -128,20 +138,20 @@ const verifyBookingOtp = async (req, res, next) => {
       record.attempts += 1;
       return res.status(400).json({
         success: false,
-        message: `Invalid OTP code. Please check and try again (${5 - record.attempts} attempts remaining).`,
+        message: `Invalid OTP code. Please check your email and try again (${5 - record.attempts} attempts remaining).`,
       });
     }
 
     // Mark as verified
     record.verified = true;
-    otpStore.set(finalPhone, record);
+    otpStore.set(targetKey, record);
 
-    console.log(`✅ [MOBILE OTP VERIFIED] Phone: +91 ${finalPhone} successfully verified.`);
+    console.log(`✅ [EMAIL OTP VERIFIED] ${targetKey} successfully verified.`);
 
     res.json({
       success: true,
       verified: true,
-      message: 'Mobile number verified successfully!',
+      message: 'Email address verified successfully!',
     });
   } catch (error) {
     next(error);
@@ -172,6 +182,7 @@ const createBooking = async (req, res, next) => {
       eventLocation,
       additionalMessage,
       isPhoneVerified = false,
+      isEmailVerified = false,
     } = req.body;
 
     const effectiveEventName = isCustomEvent ? (customEventName || 'Custom Event') : (packageName || eventType);
@@ -289,7 +300,8 @@ const createBooking = async (req, res, next) => {
       eventType: isCustomEvent ? 'Custom Event' : eventType,
       isCustomEvent: Boolean(isCustomEvent),
       customEventName: customEventName ? customEventName.trim() : '',
-      isPhoneVerified: Boolean(isPhoneVerified),
+      isPhoneVerified: Boolean(isPhoneVerified || isEmailVerified),
+      isEmailVerified: Boolean(isEmailVerified || isPhoneVerified),
       packageId: packageId || null,
       packageName: effectivePackageName,
       packagePrice: Number(packagePrice || 0),

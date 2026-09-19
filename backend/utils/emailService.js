@@ -295,9 +295,97 @@ const sendContactNotification = async (contact) => {
   }
 };
 
+/**
+ * Send Security OTP to customer's email address
+ */
+const sendOtpEmail = async ({ email, otp, name }) => {
+  const customerEmail = String(email).trim().toLowerCase();
+  const customerName = name ? String(name).trim() : 'Valued Customer';
+  const transporter = createTransporter();
+
+  const subject = `🔐 ${otp} is your Swastik Photography Verification Code`;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #0b0f19; color: #f3f4f6; margin: 0; padding: 24px; }
+        .container { max-width: 580px; margin: 0 auto; background-color: #111827; border: 1px solid #374151; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+        .header { background: linear-gradient(135deg, #1e1b4b 0%, #31101e 100%); padding: 36px 24px; text-align: center; border-bottom: 2px solid #e11d48; }
+        .brand { font-size: 24px; letter-spacing: 3px; font-weight: 800; color: #ffffff; text-transform: uppercase; margin: 0; }
+        .tagline { color: #fda4af; font-size: 13px; letter-spacing: 1px; margin-top: 6px; }
+        .content { padding: 32px 28px; text-align: center; }
+        .greeting { font-size: 18px; font-weight: 600; color: #f9fafb; margin-bottom: 12px; }
+        .instructions { font-size: 14px; color: #9ca3af; line-height: 1.6; margin-bottom: 28px; }
+        .otp-box { display: inline-block; background: #1f2937; border: 2px dashed #f59e0b; border-radius: 12px; padding: 18px 36px; margin: 10px 0 24px 0; }
+        .otp-code { font-size: 36px; font-weight: 800; letter-spacing: 10px; color: #fbbf24; font-family: 'Courier New', Courier, monospace; }
+        .validity { font-size: 12px; color: #f59e0b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 6px; }
+        .security-note { background: #1e1b4b/40; border: 1px solid #4338ca; border-radius: 8px; padding: 14px; font-size: 12px; color: #a5b4fc; text-align: left; margin-top: 24px; line-height: 1.5; }
+        .footer { background-color: #090d16; padding: 22px; text-align: center; font-size: 12px; color: #6b7280; border-top: 1px solid #1f2937; }
+        .footer a { color: #f59e0b; text-decoration: none; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1 class="brand">SWASTIK PHOTOGRAPHY</h1>
+          <div class="tagline">Premium Photography & Cinematic Videography</div>
+        </div>
+        <div class="content">
+          <div class="greeting">Hello ${customerName},</div>
+          <div class="instructions">
+            You are verifying your email address to authenticate your upcoming event reservation with Swastik Photography. Use the 6-digit verification code below:
+          </div>
+          
+          <div class="otp-box">
+            <div class="otp-code">${otp}</div>
+            <div class="validity">⏱ Valid for 10 minutes</div>
+          </div>
+
+          <div class="security-note">
+            <strong>🔒 Security Reminder:</strong> Never share this verification code with anyone. Swastik Photography staff will never contact you to ask for this code. If you did not request this, you can safely ignore this email.
+          </div>
+        </div>
+        <div class="footer">
+          <p style="margin: 0 0 6px 0;"><strong>Swastik Photography</strong> | Ranchi & Jamshedpur, Jharkhand</p>
+          <p style="margin: 0;">Phone: <a href="tel:9608782890">+91 9608782890</a> | Website: <a href="https://swastikphotography.in">swastikphotography.in</a></p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  if (transporter) {
+    try {
+      await transporter.sendMail({
+        from: `"Swastik Photography" <${process.env.SMTP_USER}>`,
+        to: customerEmail,
+        subject,
+        html: htmlContent,
+      });
+      console.log(`[Email OTP Sent]: Dispatched to ${customerEmail}`);
+      return { success: true, provider: 'smtp', email: customerEmail };
+    } catch (err) {
+      console.error('[Nodemailer OTP Error]:', err.message);
+      return { success: false, error: err.message };
+    }
+  } else {
+    console.log('\n================== [EMAIL OTP SECURITY DISPATCH] ==================');
+    console.log(`📧 To: ${customerEmail}`);
+    console.log(`🔐 OTP Code: ${otp}`);
+    console.log(`💬 Subject: ${subject}`);
+    console.log('Notice: Configure SMTP_USER and SMTP_PASS in .env for live email delivery.');
+    console.log('===================================================================\n');
+    return { success: true, simulated: true };
+  }
+};
+
 module.exports = {
   sendBookingNotification,
   sendCustomerBookingConfirmation,
   sendBookingStatusUpdate,
   sendContactNotification,
+  sendOtpEmail,
 };

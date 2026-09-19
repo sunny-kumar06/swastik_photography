@@ -26,6 +26,10 @@ const bookingSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
     packageId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Package',

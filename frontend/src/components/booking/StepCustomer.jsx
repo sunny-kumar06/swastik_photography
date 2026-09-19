@@ -7,8 +7,9 @@ const StepCustomer = ({ customerData, onChange }) => {
   const phoneLength = customerData.customerPhone ? customerData.customerPhone.length : 0;
   const isPhoneComplete = phoneLength === 10;
   const isEmailValid = customerData.customerEmail ? isValidEmail(customerData.customerEmail) : null;
+  const isVerified = Boolean(customerData.isEmailVerified || customerData.isPhoneVerified);
 
-  // OTP Verification state
+  // OTP Verification state for Email
   const [otpState, setOtpState] = useState({
     sent: false,
     otp: '',
@@ -31,11 +32,11 @@ const StepCustomer = ({ customerData, onChange }) => {
   }, [otpState.countdown]);
 
   const handleSendOtp = async () => {
-    const cleanPhone = sanitizePhoneNumber(customerData.customerPhone);
-    if (cleanPhone.length !== 10) {
+    const cleanEmail = (customerData.customerEmail || '').trim().toLowerCase();
+    if (!cleanEmail || !isValidEmail(cleanEmail)) {
       setOtpState((prev) => ({
         ...prev,
-        error: 'Please enter a valid 10-digit mobile number before requesting an OTP.',
+        error: 'Please enter a valid email address before requesting an OTP.',
       }));
       return;
     }
@@ -43,20 +44,23 @@ const StepCustomer = ({ customerData, onChange }) => {
     setOtpState((prev) => ({ ...prev, loading: true, error: '', successMsg: '' }));
 
     try {
-      const res = await bookingsApi.sendOtp(cleanPhone);
+      const res = await bookingsApi.sendOtp({
+        email: cleanEmail,
+        name: customerData.customerName || 'Valued Customer',
+      });
       if (res.data && res.data.success) {
         setOtpState((prev) => ({
           ...prev,
           sent: true,
-          successMsg: `Security OTP sent to +91 ${cleanPhone} via SMS. Please check your phone messages.`,
+          successMsg: `Verification code sent to ${cleanEmail}. Check your inbox or spam folder.`,
           countdown: 60,
-          otp: '', // Customer must enter the 6-digit code received on mobile
+          otp: '',
         }));
       }
     } catch (err) {
       setOtpState((prev) => ({
         ...prev,
-        error: err.response?.data?.message || 'Failed to send OTP. Please try again or check connection.',
+        error: err.response?.data?.message || 'Failed to send OTP to your email. Please verify the address and try again.',
       }));
     } finally {
       setOtpState((prev) => ({ ...prev, loading: false }));
@@ -75,30 +79,35 @@ const StepCustomer = ({ customerData, onChange }) => {
     setOtpState((prev) => ({ ...prev, verifying: true, error: '' }));
 
     try {
-      const cleanPhone = sanitizePhoneNumber(customerData.customerPhone);
-      const res = await bookingsApi.verifyOtp(cleanPhone, otpState.otp.trim());
+      const cleanEmail = (customerData.customerEmail || '').trim().toLowerCase();
+      const res = await bookingsApi.verifyOtp({
+        email: cleanEmail,
+        otp: otpState.otp.trim(),
+      });
       if (res.data && res.data.success) {
-        onChange('isPhoneVerified', true);
+        onChange('isEmailVerified', true);
+        onChange('isPhoneVerified', true); // Keep both flags in sync for backwards compatibility
         setOtpState((prev) => ({
           ...prev,
-          successMsg: 'Mobile number verified successfully! You can now proceed to confirm booking.',
+          successMsg: 'Email address verified successfully! You can now proceed to confirm booking.',
           error: '',
         }));
       }
     } catch (err) {
       setOtpState((prev) => ({
         ...prev,
-        error: err.response?.data?.message || 'Invalid or expired OTP. Please check the code and try again.',
+        error: err.response?.data?.message || 'Invalid or expired OTP. Please check your email and try again.',
       }));
     } finally {
       setOtpState((prev) => ({ ...prev, verifying: false }));
     }
   };
 
-  const handlePhoneChange = (newVal) => {
-    const sanitized = sanitizePhoneNumber(newVal);
-    onChange('customerPhone', sanitized);
-    if (customerData.isPhoneVerified) {
+  const handleEmailChange = (newVal) => {
+    const trimmed = newVal.trim();
+    onChange('customerEmail', trimmed);
+    if (isVerified) {
+      onChange('isEmailVerified', false);
       onChange('isPhoneVerified', false);
       setOtpState({
         sent: false,
@@ -112,6 +121,11 @@ const StepCustomer = ({ customerData, onChange }) => {
     }
   };
 
+  const handlePhoneChange = (newVal) => {
+    const sanitized = sanitizePhoneNumber(newVal);
+    onChange('customerPhone', sanitized);
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-8">
@@ -119,7 +133,7 @@ const StepCustomer = ({ customerData, onChange }) => {
           Step 4: Customer & Venue Details
         </h4>
         <p className="text-xs sm:text-sm text-slate-400 mt-1 font-light">
-          Verify your mobile number via OTP to authenticate your event reservation.
+          Verify your email address via OTP to authenticate your event reservation.
         </p>
       </div>
 
@@ -144,28 +158,19 @@ const StepCustomer = ({ customerData, onChange }) => {
 
         {/* Mobile Number & Email */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-start">
-          {/* Mobile Number Field + OTP Flow */}
+          {/* Mobile Number Field (Required Contact) */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
                 Mobile Number *
               </label>
-              <div className="flex items-center space-x-1">
-                {customerData.isPhoneVerified ? (
-                  <span className="text-[10px] text-emerald-400 font-bold flex items-center space-x-1">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Verified ✓</span>
-                  </span>
-                ) : (
-                  <span
-                    className={`text-[10px] font-mono font-medium ${
-                      isPhoneComplete ? 'text-amber-400' : phoneLength > 0 ? 'text-amber-400' : 'text-slate-500'
-                    }`}
-                  >
-                    {phoneLength}/10 digits
-                  </span>
-                )}
-              </div>
+              <span
+                className={`text-[10px] font-mono font-medium ${
+                  isPhoneComplete ? 'text-emerald-400 font-bold' : phoneLength > 0 ? 'text-amber-400' : 'text-slate-500'
+                }`}
+              >
+                {phoneLength}/10 digits {isPhoneComplete ? '✓' : ''}
+              </span>
             </div>
 
             <div className="relative">
@@ -174,38 +179,83 @@ const StepCustomer = ({ customerData, onChange }) => {
                 type="tel"
                 required
                 maxLength={10}
-                disabled={customerData.isPhoneVerified}
                 inputMode="numeric"
                 value={customerData.customerPhone}
                 onChange={(e) => handlePhoneChange(e.target.value)}
                 placeholder="10-digit number (e.g. 9608782890)"
                 className={`w-full pl-11 pr-10 py-3 rounded-xl bg-slate-900 border text-white text-sm focus:outline-none transition-colors font-mono ${
-                  customerData.isPhoneVerified
-                    ? 'border-emerald-500/80 bg-emerald-950/20 text-emerald-200'
-                    : phoneLength > 0 && !isPhoneComplete
+                  isPhoneComplete
+                    ? 'border-emerald-500/70 focus:border-emerald-500'
+                    : phoneLength > 0
                     ? 'border-amber-500/70 focus:border-amber-500'
-                    : isPhoneComplete
-                    ? 'border-amber-400/80 focus:border-amber-400'
                     : 'border-slate-700 focus:border-brand-accent'
                 }`}
               />
-              {customerData.isPhoneVerified ? (
+              {isPhoneComplete && (
+                <Check className="absolute right-3.5 top-3.5 w-4 h-4 text-emerald-400" />
+              )}
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">Used for event shoot coordination & updates</p>
+          </div>
+
+          {/* Email Address Field + Email OTP Verification */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Email Address *
+              </label>
+              <div>
+                {isVerified ? (
+                  <span className="text-[10px] text-emerald-400 font-bold flex items-center space-x-1">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Verified ✓</span>
+                  </span>
+                ) : isEmailValid ? (
+                  <span className="text-[10px] text-amber-400 font-semibold flex items-center space-x-1">
+                    <KeyRound className="w-3 h-3" />
+                    <span>Requires OTP</span>
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="relative">
+              <Mail className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />
+              <input
+                type="email"
+                required
+                disabled={isVerified}
+                value={customerData.customerEmail}
+                onChange={(e) => handleEmailChange(e.target.value)}
+                placeholder="e.g. priya.sharma@example.com"
+                className={`w-full pl-11 pr-10 py-3 rounded-xl bg-slate-900 border text-white text-sm focus:outline-none transition-colors ${
+                  isVerified
+                    ? 'border-emerald-500/80 bg-emerald-950/20 text-emerald-200'
+                    : customerData.customerEmail && isEmailValid
+                    ? 'border-amber-400/80 focus:border-amber-400'
+                    : customerData.customerEmail && !isEmailValid
+                    ? 'border-rose-500/70 focus:border-rose-500'
+                    : 'border-slate-700 focus:border-brand-accent'
+                }`}
+              />
+              {isVerified ? (
                 <ShieldCheck className="absolute right-3.5 top-3.5 w-4 h-4 text-emerald-400" />
-              ) : isPhoneComplete ? (
+              ) : customerData.customerEmail && isEmailValid ? (
                 <KeyRound className="absolute right-3.5 top-3.5 w-4 h-4 text-amber-400" />
               ) : null}
             </div>
 
-            {/* OTP Status & Trigger */}
-            {customerData.isPhoneVerified ? (
+            {/* Email OTP Status & Trigger */}
+            {isVerified ? (
               <div className="mt-2 flex items-center justify-between">
                 <span className="text-[11px] text-emerald-400 flex items-center space-x-1 font-semibold">
                   <Check className="w-3.5 h-3.5" />
-                  <span>Number verified for booking</span>
+                  <span>Email verified for booking</span>
                 </span>
                 <button
                   type="button"
                   onClick={() => {
+                    onChange('isEmailVerified', false);
                     onChange('isPhoneVerified', false);
                     setOtpState({
                       sent: false,
@@ -214,18 +264,17 @@ const StepCustomer = ({ customerData, onChange }) => {
                       verifying: false,
                       error: '',
                       successMsg: '',
-                      demoOtp: '',
                       countdown: 0,
                     });
                   }}
                   className="text-[10px] text-slate-400 hover:text-amber-400 underline font-medium"
                 >
-                  Change Number
+                  Change Email
                 </button>
               </div>
             ) : (
               <div className="mt-2">
-                {isPhoneComplete && !otpState.sent && (
+                {isEmailValid && !otpState.sent && (
                   <button
                     type="button"
                     onClick={handleSendOtp}
@@ -233,24 +282,34 @@ const StepCustomer = ({ customerData, onChange }) => {
                     className="w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 shadow-md disabled:opacity-50"
                   >
                     <KeyRound className="w-3.5 h-3.5" />
-                    <span>{otpState.loading ? 'Sending OTP...' : 'Verify Number with OTP *'}</span>
+                    <span>{otpState.loading ? 'Sending OTP to Email...' : 'Verify Email with OTP *'}</span>
                   </button>
+                )}
+                {customerData.customerEmail && !isEmailValid && (
+                  <p className="text-[11px] text-rose-400 flex items-center space-x-1">
+                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                    <span>Please enter a valid email address.</span>
+                  </p>
                 )}
               </div>
             )}
 
-            {/* OTP Entry Card (when OTP is sent and phone not yet verified) */}
-            {otpState.sent && !customerData.isPhoneVerified && (
+            {/* OTP Entry Card (when OTP is sent and email not yet verified) */}
+            {otpState.sent && !isVerified && (
               <div className="mt-3 p-3.5 rounded-2xl bg-slate-950 border border-amber-500/60 shadow-xl space-y-2.5 animate-fadeIn">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center space-x-1.5 text-amber-400 font-bold">
                     <KeyRound className="w-3.5 h-3.5" />
-                    <span>Enter 6-Digit SMS OTP</span>
+                    <span>Enter 6-Digit Email OTP</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono text-[10px] border border-slate-700">
-                    Check Phone SMS
+                  <span className="px-2 py-0.5 rounded-full bg-slate-800 text-amber-300 font-mono text-[10px] border border-amber-500/30">
+                    Check Inbox / Spam
                   </span>
                 </div>
+
+                <p className="text-[11px] text-slate-400">
+                  Verification code sent to <strong className="text-white">{customerData.customerEmail}</strong>.
+                </p>
 
                 <div className="flex items-center gap-2">
                   <input
@@ -291,7 +350,7 @@ const StepCustomer = ({ customerData, onChange }) => {
                     {otpState.countdown > 0 ? (
                       <span>Resend in <strong className="text-white font-mono">{otpState.countdown}s</strong></span>
                     ) : (
-                      <span>Didn't receive code?</span>
+                      <span>Didn't receive email?</span>
                     )}
                   </span>
                   <button
@@ -304,47 +363,6 @@ const StepCustomer = ({ customerData, onChange }) => {
                   </button>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Email Address */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                Email Address *
-              </label>
-              {customerData.customerEmail && isEmailValid && (
-                <span className="text-[10px] text-emerald-400 flex items-center space-x-0.5">
-                  <Check className="w-3 h-3" />
-                  <span>Valid Email</span>
-                </span>
-              )}
-            </div>
-            <div className="relative">
-              <Mail className="absolute left-4 top-3.5 w-4 h-4 text-slate-400" />
-              <input
-                type="email"
-                required
-                value={customerData.customerEmail}
-                onChange={(e) => onChange('customerEmail', e.target.value.trim())}
-                placeholder="e.g. priya.sharma@example.com"
-                className={`w-full pl-11 pr-10 py-3 rounded-xl bg-slate-900 border text-white text-sm focus:outline-none transition-colors ${
-                  customerData.customerEmail && !isEmailValid
-                    ? 'border-amber-500/70 focus:border-amber-500'
-                    : customerData.customerEmail && isEmailValid
-                    ? 'border-emerald-500/70 focus:border-emerald-500'
-                    : 'border-slate-700 focus:border-brand-accent'
-                }`}
-              />
-              {customerData.customerEmail && isEmailValid && (
-                <Check className="absolute right-3.5 top-3.5 w-4 h-4 text-emerald-400" />
-              )}
-            </div>
-            {customerData.customerEmail && !isEmailValid && (
-              <p className="text-[11px] text-amber-400 mt-1 flex items-center space-x-1">
-                <AlertCircle className="w-3 h-3 flex-shrink-0" />
-                <span>Please enter a valid email (e.g. name@domain.com).</span>
-              </p>
             )}
           </div>
         </div>
