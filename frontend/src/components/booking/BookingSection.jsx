@@ -148,7 +148,7 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
       const raw = err.response?.data?.message || err.message || '';
       const isTechnical = /BSONError|Cast to|ObjectId|validation failed|Mongoose|MongoError|SyntaxError|Unhandled/i.test(raw);
       if (isTechnical || !raw) {
-        setErrorMsg('Unable to complete your booking reservation at this moment. Please check your details or contact our team directly at +91 9608782890.');
+        setErrorMsg('Unable to complete your booking reservation at this moment. Please check your details or contact our team directly.');
       } else {
         setErrorMsg(raw);
       }

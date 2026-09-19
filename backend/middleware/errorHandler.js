@@ -31,7 +31,7 @@ const errorHandler = (err, req, res, next) => {
   }
   // Mask any 500 or technical/database strings from ever reaching user
   else if (statusCode === 500 || /BSONError|Cast to|ObjectId|Mongoose|MongoError|SyntaxError/i.test(clientMessage)) {
-    clientMessage = 'We could not process your request at this moment. Please check your details or contact our team directly at +91 9608782890.';
+    clientMessage = 'We could not process your request at this moment. Please check your details or contact our team directly.';
   }
 
   res.status(statusCode).json({

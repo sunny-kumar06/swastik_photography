@@ -44,10 +44,7 @@ const StepSummary = ({ bookingData, onConfirm, submitting, confirmedResult }) =>
         </div>
 
         <div className="text-xs text-slate-400">
-          Need immediate assistance? Reach us at{' '}
-          <a href="tel:9608782890" className="text-brand-accent font-bold">
-            +91 9608782890
-          </a>
+          Need immediate assistance? Feel free to connect with our team via WhatsApp or email.
         </div>
       </div>
     );
@@ -180,7 +177,7 @@ const StepSummary = ({ bookingData, onConfirm, submitting, confirmedResult }) =>
               <span className="text-white font-medium break-words">
                 {bookingData.customerName}
                 <span className="block text-slate-400 text-xs mt-0.5 sm:inline sm:text-inherit sm:mt-0">
-                  {' '}({bookingData.customerPhone} • {bookingData.customerEmail})
+                  {' '}({bookingData.customerEmail})
                 </span>
               </span>
             </div>

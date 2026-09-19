@@ -205,7 +205,7 @@ const StepCustomer = ({ customerData, onChange }) => {
                 inputMode="numeric"
                 value={customerData.customerPhone}
                 onChange={(e) => handlePhoneChange(e.target.value)}
-                placeholder="10-digit number (e.g. 9608782890)"
+                placeholder="Enter 10-digit mobile number"
                 className={`w-full pl-11 pr-10 py-3 rounded-xl bg-slate-900 border text-white text-sm focus:outline-none transition-colors font-mono ${
                   isPhoneComplete
                     ? 'border-emerald-500/70 focus:border-emerald-500'
