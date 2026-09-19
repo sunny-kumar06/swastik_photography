@@ -102,6 +102,25 @@ const distFolder = path.join(__dirname, '../frontend/dist');
 const staticDir = fs.existsSync(publicFolder) ? publicFolder : (fs.existsSync(distFolder) ? distFolder : null);
 
 if (staticDir) {
+  // Explicit sitemap.xml and robots.txt routes with correct Content-Type
+  app.get('/sitemap.xml', (req, res) => {
+    const sitemapFile = path.join(__dirname, 'public', 'sitemap.xml');
+    if (fs.existsSync(sitemapFile)) {
+      res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+      return res.sendFile(sitemapFile);
+    }
+    res.status(404).end();
+  });
+
+  app.get('/robots.txt', (req, res) => {
+    const robotsFile = path.join(__dirname, 'public', 'robots.txt');
+    if (fs.existsSync(robotsFile)) {
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      return res.sendFile(robotsFile);
+    }
+    res.status(404).end();
+  });
+
   app.use(express.static(staticDir));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
