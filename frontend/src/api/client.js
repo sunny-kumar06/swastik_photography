@@ -74,6 +74,11 @@ export const settingsApi = {
   },
 };
 
+// Bootstrap endpoint (all public homepage data in 1 query)
+export const bootstrapApi = {
+  get: () => api.get('/bootstrap'),
+};
+
 // Gallery endpoints
 export const galleryApi = {
   getAll: (params) => api.get('/gallery', { params }),

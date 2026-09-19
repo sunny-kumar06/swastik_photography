@@ -4,6 +4,7 @@ import { Sparkles, ArrowRight, Check } from 'lucide-react';
 import { servicesApi, getMediaUrl } from '../../api/client';
 import OptimizedImage from '../common/OptimizedImage';
 import { getCachedData, setCachedData } from '../../utils/cache';
+import { useAppData } from '../../context/AppDataContext';
 
 const DEFAULT_FALLBACK_SERVICES = [
   {
@@ -36,11 +37,30 @@ const DEFAULT_FALLBACK_SERVICES = [
 ];
 
 const ServicesSection = ({ onSelectServiceForBooking }) => {
-  const cachedServices = getCachedData('services_list', null);
-  const [services, setServices] = useState(cachedServices || DEFAULT_FALLBACK_SERVICES);
-  const [loading, setLoading] = useState(!cachedServices && !DEFAULT_FALLBACK_SERVICES.length);
+  let appData;
+  try {
+    appData = useAppData();
+  } catch {
+    appData = null;
+  }
 
+  const cachedServices = getCachedData('services_list', null);
+  const initialServices = appData?.services?.length ? appData.services : (cachedServices || DEFAULT_FALLBACK_SERVICES);
+
+  const [services, setServices] = useState(initialServices);
+  const [loading, setLoading] = useState(!initialServices || initialServices.length === 0);
+
+  // Sync with central AppData when ready
   useEffect(() => {
+    if (appData?.services?.length > 0) {
+      setServices(appData.services);
+      setLoading(false);
+    }
+  }, [appData?.services]);
+
+  // Fallback independent fetch only if standalone
+  useEffect(() => {
+    if (appData) return;
     let isMounted = true;
     const fetchServices = async () => {
       try {
@@ -59,7 +79,7 @@ const ServicesSection = ({ onSelectServiceForBooking }) => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [appData]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {

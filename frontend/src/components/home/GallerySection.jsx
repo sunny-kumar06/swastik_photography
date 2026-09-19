@@ -5,6 +5,7 @@ import { galleryApi, getMediaUrl } from '../../api/client';
 import Lightbox from '../common/Lightbox';
 import OptimizedImage from '../common/OptimizedImage';
 import { getCachedData, setCachedData } from '../../utils/cache';
+import { useAppData } from '../../context/AppDataContext';
 
 const categories = [
   'All',
@@ -68,17 +69,36 @@ const DEFAULT_FALLBACK_PHOTOS = [
 ];
 
 const GallerySection = () => {
+  let appData;
+  try {
+    appData = useAppData();
+  } catch {
+    appData = null;
+  }
+
   const cachedPhotos = getCachedData('gallery_photos', null);
-  const [photos, setPhotos] = useState(cachedPhotos || DEFAULT_FALLBACK_PHOTOS);
+  const initialPhotos = appData?.photos?.length ? appData.photos : (cachedPhotos || DEFAULT_FALLBACK_PHOTOS);
+
+  const [photos, setPhotos] = useState(initialPhotos);
   const [activeCategory, setActiveCategory] = useState('All');
-  const [loading, setLoading] = useState(!cachedPhotos && !DEFAULT_FALLBACK_PHOTOS.length);
+  const [loading, setLoading] = useState(!initialPhotos || initialPhotos.length === 0);
   const [visibleCount, setVisibleCount] = useState(6);
 
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // Sync with central AppData when ready
   useEffect(() => {
+    if (appData?.photos?.length > 0) {
+      setPhotos(appData.photos);
+      setLoading(false);
+    }
+  }, [appData?.photos]);
+
+  // Fallback independent fetch only if standalone
+  useEffect(() => {
+    if (appData) return;
     let isMounted = true;
     const fetchGallery = async () => {
       try {
@@ -97,7 +117,7 @@ const GallerySection = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [appData]);
 
   const filteredPhotos =
     activeCategory === 'All'

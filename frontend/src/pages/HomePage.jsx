@@ -12,6 +12,7 @@ import BookingSection from '../components/booking/BookingSection';
 import Footer from '../components/common/Footer';
 import WhatsAppButton from '../components/common/WhatsAppButton';
 import PageOpeningTransition from '../components/common/PageOpeningTransition';
+import { AppDataProvider } from '../context/AppDataContext';
 
 const HomePage = () => {
   const [selectedEventForBooking, setSelectedEventForBooking] = useState(null);
@@ -36,9 +37,10 @@ const HomePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-brand-dark text-slate-100 flex flex-col selection:bg-brand-accent selection:text-white">
-      {/* Luxury Cinematic Opening Transition */}
-      <PageOpeningTransition />
+    <AppDataProvider>
+      <div className="min-h-screen bg-brand-dark text-slate-100 flex flex-col selection:bg-brand-accent selection:text-white">
+        {/* Luxury Cinematic Opening Transition */}
+        <PageOpeningTransition />
 
       {/* Sticky Fixed Navbar */}
       <Navbar onBookNowClick={scrollToBooking} />
@@ -65,6 +67,7 @@ const HomePage = () => {
       {/* Global Footer */}
       <Footer />
     </div>
+  </AppDataProvider>
   );
 };
 

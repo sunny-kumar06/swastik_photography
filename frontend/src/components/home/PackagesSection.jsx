@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Check, Star, Sparkles, Clock, ArrowRight } from 'lucide-react';
 import { packagesApi } from '../../api/client';
 import { getCachedData, setCachedData } from '../../utils/cache';
+import { useAppData } from '../../context/AppDataContext';
 
 const categories = ['All', 'Wedding', 'Pre-Wedding', 'Birthday'];
 
@@ -63,12 +64,31 @@ const DEFAULT_FALLBACK_PACKAGES = [
 ];
 
 const PackagesSection = ({ onSelectPackageForBooking }) => {
-  const cachedPackages = getCachedData('packages_list', null);
-  const [packages, setPackages] = useState(cachedPackages || DEFAULT_FALLBACK_PACKAGES);
-  const [activeCategory, setActiveCategory] = useState('All');
-  const [loading, setLoading] = useState(!cachedPackages && !DEFAULT_FALLBACK_PACKAGES.length);
+  let appData;
+  try {
+    appData = useAppData();
+  } catch {
+    appData = null;
+  }
 
+  const cachedPackages = getCachedData('packages_list', null);
+  const initialPackages = appData?.packages?.length ? appData.packages : (cachedPackages || DEFAULT_FALLBACK_PACKAGES);
+
+  const [packages, setPackages] = useState(initialPackages);
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [loading, setLoading] = useState(!initialPackages || initialPackages.length === 0);
+
+  // Sync with central AppData when ready
   useEffect(() => {
+    if (appData?.packages?.length > 0) {
+      setPackages(appData.packages);
+      setLoading(false);
+    }
+  }, [appData?.packages]);
+
+  // Fallback independent fetch only if standalone
+  useEffect(() => {
+    if (appData) return;
     let isMounted = true;
     const fetchPackages = async () => {
       try {
@@ -87,7 +107,7 @@ const PackagesSection = ({ onSelectPackageForBooking }) => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [appData]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {

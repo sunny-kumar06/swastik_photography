@@ -9,9 +9,20 @@ const Review = require('../models/Review');
 
 const seedDB = async () => {
   try {
-    const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/swastik_photography';
-    await mongoose.connect(mongoUri);
-    console.log('[Seed]: Connected to MongoDB at', mongoUri);
+    if (mongoose.connection.readyState !== 1) {
+      const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/swastik_photography';
+      await mongoose.connect(mongoUri);
+      console.log('[Seed]: Connected to MongoDB at', mongoUri);
+    }
+
+    // Fast-path: Check if already initialized to prevent cold start latency
+    const [hasAdmin, hasSettings] = await Promise.all([
+      Admin.exists({}),
+      Settings.exists({}),
+    ]);
+    if (hasAdmin && hasSettings) {
+      return true;
+    }
 
     // 1. Seed Admin
     const adminEmail = (process.env.ADMIN_EMAIL || 'admin@swastikphotography.com').toLowerCase().trim();

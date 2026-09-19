@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Star, ChevronLeft, ChevronRight, Quote, Heart } from 'lucide-react';
 import { reviewsApi } from '../../api/client';
 import { getCachedData, setCachedData } from '../../utils/cache';
+import { useAppData } from '../../context/AppDataContext';
 
 const DEFAULT_FALLBACK_REVIEWS = [
   {
@@ -35,12 +36,31 @@ const DEFAULT_FALLBACK_REVIEWS = [
 ];
 
 const ReviewsSection = () => {
-  const cachedReviews = getCachedData('reviews_list', null);
-  const [reviews, setReviews] = useState(cachedReviews || DEFAULT_FALLBACK_REVIEWS);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(!cachedReviews && !DEFAULT_FALLBACK_REVIEWS.length);
+  let appData;
+  try {
+    appData = useAppData();
+  } catch {
+    appData = null;
+  }
 
+  const cachedReviews = getCachedData('reviews_list', null);
+  const initialReviews = appData?.reviews?.length ? appData.reviews : (cachedReviews || DEFAULT_FALLBACK_REVIEWS);
+
+  const [reviews, setReviews] = useState(initialReviews);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading] = useState(!initialReviews || initialReviews.length === 0);
+
+  // Sync with central AppData when ready
   useEffect(() => {
+    if (appData?.reviews?.length > 0) {
+      setReviews(appData.reviews);
+      setLoading(false);
+    }
+  }, [appData?.reviews]);
+
+  // Fallback independent fetch only if standalone
+  useEffect(() => {
+    if (appData) return;
     let isMounted = true;
     const fetchReviews = async () => {
       try {
@@ -59,7 +79,7 @@ const ReviewsSection = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [appData]);
 
   // Auto rotate carousel every 6s
   useEffect(() => {

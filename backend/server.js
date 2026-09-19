@@ -16,6 +16,7 @@ const packageRoutes = require('./routes/packageRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const bootstrapRoutes = require('./routes/bootstrapRoutes');
 
 // Auto seed helper
 const Admin = require('./models/Admin');
@@ -92,6 +93,7 @@ app.use('/api/packages', packageRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/bootstrap', bootstrapRoutes);
 
 // Frontend static serving (from public folder or frontend/dist)
 const fs = require('fs');
