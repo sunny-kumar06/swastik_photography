@@ -119,11 +119,41 @@ const dispatchEmail = async ({ to, subject, html, text }) => {
 };
 
 /**
- * Send email notification to Admin for a new booking
+ * Fetch the currently configured contact email dynamically from database Settings.
+ * This guarantees that when the admin updates their email in Admin Settings for update reasons,
+ * all incoming booking and contact notifications are sent to the updated email address in real time.
  */
-const sendBookingNotification = async (booking) => {
-  const adminEmail = process.env.ADMIN_EMAIL || 'sk61398sny@gmail.com';
-  const transporter = createTransporter();
+const getActiveContactEmail = async () => {
+  try {
+    const mongoose = require('mongoose');
+    if (mongoose.connection && mongoose.connection.readyState === 1) {
+      const Settings = require('../models/Settings');
+      const currentSettings = await Settings.findOne().select('email');
+      if (currentSettings && currentSettings.email && currentSettings.email.trim()) {
+        return currentSettings.email.trim().toLowerCase();
+      }
+
+      const Admin = require('../models/Admin');
+      const currentAdmin = await Admin.findOne().select('email');
+      if (currentAdmin && currentAdmin.email && currentAdmin.email.trim()) {
+        return currentAdmin.email.trim().toLowerCase();
+      }
+    }
+  } catch (err) {
+    console.warn('[Fetch Contact Email Error]:', err.message);
+  }
+
+  return (process.env.ADMIN_EMAIL || process.env.SMTP_USER || 'sk61398sny@gmail.com').trim().toLowerCase();
+};
+
+/**
+ * Send email notification to Admin for a new booking
+ * Delivers to the currently configured contact email (from Settings in DB)
+ */
+const sendBookingNotification = async (booking, overrideEmail = null) => {
+  const adminEmail = (overrideEmail && String(overrideEmail).trim())
+    ? String(overrideEmail).trim().toLowerCase()
+    : await getActiveContactEmail();
 
   const formattedPrice = new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -132,6 +162,18 @@ const sendBookingNotification = async (booking) => {
   }).format(booking.packagePrice);
 
   const subject = `📸 NEW BOOKING RECEIVED: [${booking.bookingReference}] - ${booking.customerName}`;
+
+  const textContent = `New Booking Received: [${booking.bookingReference}]
+Customer: ${booking.customerName}
+Phone: ${booking.customerPhone}
+Email: ${booking.customerEmail}
+Event: ${booking.eventType}${booking.isCustomEvent && booking.customEventName ? ` (${booking.customEventName})` : ''}
+Package: ${booking.packageName}
+Price: ${booking.isCustomEvent && booking.packagePrice === 0 ? 'Pending Quote (Update within 24h)' : formattedPrice}
+Dates: ${booking.isMultiDay && booking.eventDates && booking.eventDates.length > 0 ? booking.eventDates.join(', ') : booking.eventDate}
+Time Slot: ${booking.eventTimeSlot}
+Venue: ${booking.eventLocation}
+Notes: ${booking.additionalMessage || 'None'}`;
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -237,44 +279,36 @@ const sendBookingNotification = async (booking) => {
     </html>
   `;
 
-  if (transporter) {
-    try {
-      const info = await transporter.sendMail({
-        from: `"Swastik Photography" <${process.env.SMTP_USER}>`,
-        to: adminEmail,
-        subject,
-        html: htmlContent,
-      });
-      console.log(`[Email Sent to Admin]: ${adminEmail}, MessageId: ${info.messageId}`);
-      return { success: true, messageId: info.messageId };
-    } catch (error) {
-      console.error('[Nodemailer Admin Error]:', error.message);
-      return { success: false, error: error.message };
-    }
-  } else {
-    console.log('\n================== [ADMIN EMAIL DISPATCH PREVIEW] ==================');
-    console.log(`To: ${adminEmail}`);
-    console.log(`Subject: ${subject}`);
-    console.log(`Booking ID: ${booking.bookingReference}`);
-    console.log(`Customer: ${booking.customerName} (${booking.customerPhone}, ${booking.customerEmail})`);
-    console.log(`Event: ${booking.eventType} | ${booking.packageName} | ${formattedPrice}`);
-    console.log(`Date & Time: ${booking.eventDate} - ${booking.eventTimeSlot}`);
-    console.log(`Location: ${booking.eventLocation}`);
-    console.log('Notice: Configure SMTP_USER and SMTP_PASS in .env for live inbox delivery.');
-    console.log('====================================================================\n');
-    return { success: true, simulated: true };
-  }
+  console.log(`[Admin Booking Notification]: Dispatching alert to active contact email: ${adminEmail}`);
+
+  return await dispatchEmail({
+    to: adminEmail,
+    subject,
+    text: textContent,
+    html: htmlContent,
+  });
 };
 
 /**
  * Send email confirmation receipt to Customer
  */
 const sendCustomerBookingConfirmation = async (booking) => {
-  const transporter = createTransporter();
   const customerEmail = booking.customerEmail;
-  if (!customerEmail) return;
+  if (!customerEmail) return { success: false, error: 'No customer email provided' };
 
   const subject = `✨ Booking Request Confirmed: [${booking.bookingReference}] - Swastik Photography`;
+  const textContent = `Dear ${booking.customerName},
+
+Thank you for reserving your special date with Swastik Photography!
+Your Booking Reference: ${booking.bookingReference}
+
+Event: ${booking.eventType} (${booking.packageName})
+Date: ${booking.isMultiDay && booking.eventDates && booking.eventDates.length > 0 ? booking.eventDates.join(', ') : booking.eventDate} • ${booking.eventTimeSlot}
+Venue: ${booking.eventLocation}
+
+Our team will contact you at ${booking.customerPhone} within 24 hours.
+For urgent inquiries: +91 9608782890`;
+
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; background: #07090e; color: #f8fafc; padding: 24px;">
       <div style="max-width: 550px; margin: 0 auto; background: #111827; border: 1px solid #374151; border-radius: 12px; padding: 24px;">
@@ -298,32 +332,29 @@ const sendCustomerBookingConfirmation = async (booking) => {
     </div>
   `;
 
-  if (transporter) {
-    try {
-      await transporter.sendMail({
-        from: `"Swastik Photography" <${process.env.SMTP_USER}>`,
-        to: customerEmail,
-        subject,
-        html: htmlContent,
-      });
-      console.log(`[Email Sent to Customer]: ${customerEmail}`);
-    } catch (err) {
-      console.error('[Nodemailer Customer Confirmation Error]:', err.message);
-    }
-  } else {
-    console.log(`[Customer Confirmation Email Preview]: Sent to ${customerEmail} (Ref: ${booking.bookingReference})`);
-  }
+  return await dispatchEmail({
+    to: customerEmail,
+    subject,
+    text: textContent,
+    html: htmlContent,
+  });
 };
 
 /**
  * Send email status update to Customer (e.g. Confirmed / Completed)
  */
 const sendBookingStatusUpdate = async (booking) => {
-  const transporter = createTransporter();
   const customerEmail = booking.customerEmail;
-  if (!customerEmail) return;
+  if (!customerEmail) return { success: false, error: 'No customer email provided' };
 
   const subject = `📢 Status Update: [${booking.bookingReference}] is now ${booking.status.toUpperCase()}`;
+  const textContent = `Dear ${booking.customerName},
+
+The status of your booking ${booking.bookingReference} for ${booking.eventType} on ${booking.eventDate} has been updated to: ${booking.status.toUpperCase()}.
+${booking.adminNotes ? `Studio Note: "${booking.adminNotes}"` : ''}
+
+Questions? Contact us directly at +91 9608782890.`;
+
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; background: #07090e; color: #f8fafc; padding: 24px;">
       <div style="max-width: 550px; margin: 0 auto; background: #111827; border: 1px solid #374151; border-radius: 12px; padding: 24px;">
@@ -339,31 +370,28 @@ const sendBookingStatusUpdate = async (booking) => {
     </div>
   `;
 
-  if (transporter) {
-    try {
-      await transporter.sendMail({
-        from: `"Swastik Photography" <${process.env.SMTP_USER}>`,
-        to: customerEmail,
-        subject,
-        html: htmlContent,
-      });
-      console.log(`[Status Update Email Sent]: To ${customerEmail}, Status: ${booking.status}`);
-    } catch (err) {
-      console.error('[Status Email Error]:', err.message);
-    }
-  } else {
-    console.log(`[Status Update Email Preview]: Sent to ${customerEmail}, New Status: ${booking.status}`);
-  }
+  return await dispatchEmail({
+    to: customerEmail,
+    subject,
+    text: textContent,
+    html: htmlContent,
+  });
 };
 
 /**
  * Send email notification for a new contact message
+ * Delivers to the currently configured contact email (from Settings in DB)
  */
 const sendContactNotification = async (contact) => {
-  const adminEmail = process.env.ADMIN_EMAIL || 'sk61398sny@gmail.com';
-  const transporter = createTransporter();
+  const adminEmail = await getActiveContactEmail();
 
   const subject = `📩 NEW CONTACT ENQUIRY: from ${contact.name}`;
+  const textContent = `New contact enquiry received:
+Name: ${contact.name}
+Email: ${contact.email}
+Phone: ${contact.phone}
+Message: ${contact.message}`;
+
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; background: #0f172a; color: #f8fafc; padding: 24px;">
       <h2 style="color: #f43f5e; border-bottom: 2px solid #f43f5e; padding-bottom: 8px;">New Contact Message Received</h2>
@@ -377,25 +405,14 @@ const sendContactNotification = async (contact) => {
     </div>
   `;
 
-  if (transporter) {
-    try {
-      await transporter.sendMail({
-        from: `"Swastik Photography" <${process.env.SMTP_USER}>`,
-        to: adminEmail,
-        subject,
-        html: htmlContent,
-      });
-      console.log(`[Email Sent]: Contact enquiry sent to ${adminEmail}`);
-    } catch (err) {
-      console.error('[Nodemailer Contact Error]:', err.message);
-    }
-  } else {
-    console.log('\n============== [CONTACT ENQUIRY NOTIFICATION] ==============');
-    console.log(`To: ${adminEmail}`);
-    console.log(`From: ${contact.name} (${contact.phone}, ${contact.email})`);
-    console.log(`Message: ${contact.message}`);
-    console.log('============================================================\n');
-  }
+  console.log(`[Contact Enquiry Notification]: Dispatching alert to active contact email: ${adminEmail}`);
+
+  return await dispatchEmail({
+    to: adminEmail,
+    subject,
+    text: textContent,
+    html: htmlContent,
+  });
 };
 
 /**
@@ -482,6 +499,7 @@ Website: https://swastikphotography.in`;
 
 module.exports = {
   dispatchEmail,
+  getActiveContactEmail,
   sendBookingNotification,
   sendCustomerBookingConfirmation,
   sendBookingStatusUpdate,
