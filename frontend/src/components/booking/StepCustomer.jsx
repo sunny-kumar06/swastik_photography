@@ -73,8 +73,9 @@ const StepCustomer = ({ customerData, onChange }) => {
     }
   };
 
-  const handleVerifyOtp = async () => {
-    if (!otpState.otp || otpState.otp.trim().length !== 6) {
+  const triggerVerifyOtp = async (codeToVerify) => {
+    const code = String(codeToVerify || otpState.otp).trim();
+    if (code.length !== 6) {
       setOtpState((prev) => ({
         ...prev,
         error: 'Please enter the complete 6-digit verification code.',
@@ -88,25 +89,37 @@ const StepCustomer = ({ customerData, onChange }) => {
       const cleanEmail = (customerData.customerEmail || '').trim().toLowerCase();
       const res = await bookingsApi.verifyOtp({
         email: cleanEmail,
-        otp: otpState.otp.trim(),
+        otp: code,
       });
       if (res.data && res.data.success) {
         onChange('isEmailVerified', true);
         onChange('isPhoneVerified', true); // Keep both flags in sync for backwards compatibility
         setOtpState((prev) => ({
           ...prev,
-          successMsg: 'Email address verified successfully! You can now proceed to confirm booking.',
+          successMsg: 'Email verified successfully! You can now proceed to confirm booking.',
           error: '',
         }));
       }
     } catch (err) {
       setOtpState((prev) => ({
         ...prev,
-        error: err.response?.data?.message || 'Invalid or expired OTP. Please check your email and try again.',
+        error: err.response?.data?.message || 'Invalid or expired OTP code. Please check your email and try again.',
       }));
     } finally {
       setOtpState((prev) => ({ ...prev, verifying: false }));
     }
+  };
+
+  const handleOtpInputChange = (val) => {
+    const digits = val.replace(/\D/g, '').slice(0, 6);
+    setOtpState((p) => ({ ...p, otp: digits, error: '' }));
+    if (digits.length === 6) {
+      triggerVerifyOtp(digits);
+    }
+  };
+
+  const handleVerifyOtp = () => {
+    triggerVerifyOtp(otpState.otp);
   };
 
   const handleEmailChange = (newVal) => {
@@ -281,15 +294,20 @@ const StepCustomer = ({ customerData, onChange }) => {
             ) : (
               <div className="mt-2">
                 {isEmailValid && !otpState.sent && (
-                  <button
-                    type="button"
-                    onClick={handleSendOtp}
-                    disabled={otpState.loading}
-                    className="w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 shadow-md disabled:opacity-50"
-                  >
-                    <KeyRound className="w-3.5 h-3.5" />
-                    <span>{otpState.loading ? 'Sending OTP to Email...' : 'Verify Email with OTP *'}</span>
-                  </button>
+                  <div className="space-y-1.5">
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={otpState.loading}
+                      className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-black font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center space-x-2 shadow-lg disabled:opacity-50"
+                    >
+                      <KeyRound className="w-4 h-4" />
+                      <span>{otpState.loading ? 'Sending Code to Your Email...' : 'Send OTP to My Email *'}</span>
+                    </button>
+                    <p className="text-[10px] text-slate-400 text-center">
+                      A 6-digit code will be sent to <span className="text-amber-300 font-mono">{customerData.customerEmail}</span> to verify your identity.
+                    </p>
+                  </div>
                 )}
                 {customerData.customerEmail && !isEmailValid && (
                   <p className="text-[11px] text-rose-400 flex items-center space-x-1">
@@ -313,9 +331,10 @@ const StepCustomer = ({ customerData, onChange }) => {
                   </span>
                 </div>
 
-                <p className="text-[11px] text-slate-400">
-                  Verification code sent to <strong className="text-white">{customerData.customerEmail}</strong>.
-                </p>
+                <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-300">
+                  Verification code sent to <strong className="text-white font-mono">{customerData.customerEmail}</strong>.
+                  <span className="block text-[10px] text-amber-300/90 mt-0.5">Auto-verifies upon entering 6 digits.</span>
+                </div>
 
                 <div className="flex items-center gap-2">
                   <input
@@ -323,15 +342,15 @@ const StepCustomer = ({ customerData, onChange }) => {
                     maxLength={6}
                     inputMode="numeric"
                     value={otpState.otp}
-                    onChange={(e) => setOtpState((p) => ({ ...p, otp: e.target.value.replace(/\D/g, '') }))}
+                    onChange={(e) => handleOtpInputChange(e.target.value)}
                     placeholder="6-digit OTP"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-center tracking-[0.25em] font-bold text-sm focus:outline-none focus:border-amber-400"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-center tracking-[0.25em] font-bold text-sm focus:outline-none focus:border-amber-400"
                   />
                   <button
                     type="button"
                     disabled={otpState.verifying || otpState.otp.length !== 6}
                     onClick={handleVerifyOtp}
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider disabled:opacity-50 transition-colors whitespace-nowrap shadow-md"
+                    className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider disabled:opacity-50 transition-colors whitespace-nowrap shadow-md"
                   >
                     {otpState.verifying ? 'Verifying...' : 'Verify'}
                   </button>
