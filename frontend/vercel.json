@@ -52,7 +52,11 @@
       "destination": "/robots.txt"
     },
     {
-      "source": "/((?!sitemap\\.xml|robots\\.txt|.*\\..*).*)",
+      "source": "/api/send-email",
+      "destination": "/api/send-email"
+    },
+    {
+      "source": "/((?!sitemap\\.xml|robots\\.txt|api/send-email|.*\\..*).*)",
       "destination": "/index.html"
     }
   ]

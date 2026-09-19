@@ -32,6 +32,93 @@ const createFallbackTransporter = () => {
 };
 
 /**
+ * High-Reliability Central Mail Dispatcher.
+ * Automatically tries HTTPS Cloud Relay over port 443 (bypassing Render's SMTP port 587/465 block)
+ * and falls back to direct Nodemailer for local and unblocked environments.
+ */
+const dispatchEmail = async ({ to, subject, html, text }) => {
+  const { user } = getSmtpConfig();
+  const RELAY_SECRET = process.env.RELAY_SECRET || 'swastik_internal_mail_secret_2026';
+  const relayUrl = process.env.MAIL_RELAY_URL || 'https://swastikphotography.in/api/send-email';
+
+  let lastError = null;
+
+  // 1. Try HTTPS Relay (port 443 - works everywhere, guaranteed to bypass cloud SMTP blocks)
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const relayRes = await fetch(relayUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-relay-secret': RELAY_SECRET,
+      },
+      body: JSON.stringify({
+        to,
+        subject,
+        html,
+        text,
+        secret: RELAY_SECRET,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    const relayData = await relayRes.json();
+    if (relayRes.ok && relayData.success) {
+      console.log(`[Email Dispatched via HTTPS Cloud Relay]: To ${to} (ID: ${relayData.messageId})`);
+      return { success: true, provider: 'https_relay', messageId: relayData.messageId };
+    }
+    console.warn(`[HTTPS Cloud Relay returned]:`, relayData.error || relayData.message);
+    lastError = relayData.error || relayData.message;
+  } catch (relayErr) {
+    console.warn(`[HTTPS Cloud Relay unavailable (${relayErr.message}), falling back to direct Nodemailer]`);
+    lastError = relayErr.message;
+  }
+
+  // 2. Try Direct Nodemailer (service: 'gmail')
+  try {
+    const transporter = createTransporter();
+    const info = await transporter.sendMail({
+      from: `"Swastik Photography" <${user}>`,
+      to,
+      subject,
+      text: text || '',
+      html: html || '',
+      priority: 'high',
+      headers: { 'X-Priority': '1' },
+    });
+    console.log(`[Email Dispatched via Direct Gmail]: To ${to} (ID: ${info.messageId})`);
+    return { success: true, provider: 'direct_gmail', messageId: info.messageId };
+  } catch (directErr) {
+    console.warn(`[Direct Gmail failed (${directErr.message}), attempting Port 465 SSL]`);
+    lastError = directErr.message;
+  }
+
+  // 3. Try Port 465 SSL Direct
+  try {
+    const fallbackTransporter = createFallbackTransporter();
+    const info = await fallbackTransporter.sendMail({
+      from: `"Swastik Photography" <${user}>`,
+      to,
+      subject,
+      text: text || '',
+      html: html || '',
+      priority: 'high',
+      headers: { 'X-Priority': '1' },
+    });
+    console.log(`[Email Dispatched via Port 465 SSL]: To ${to} (ID: ${info.messageId})`);
+    return { success: true, provider: 'port_465_ssl', messageId: info.messageId };
+  } catch (sslErr) {
+    console.error(`[CRITICAL: All Email Transports Failed]:`, sslErr.message);
+    lastError = sslErr.message;
+  }
+
+  return { success: false, error: lastError || 'Email delivery failed' };
+};
+
+/**
  * Send email notification to Admin for a new booking
  */
 const sendBookingNotification = async (booking) => {
@@ -385,55 +472,16 @@ Website: https://swastikphotography.in`;
     </html>
   `;
 
-  let lastError = null;
-
-  // Strategy 1: Gmail Service
-  try {
-    const transporter = createTransporter();
-    const info = await transporter.sendMail({
-      from: `"Swastik Photography" <${user}>`,
-      to: customerEmail,
-      subject,
-      text: textContent,
-      html: htmlContent,
-      priority: 'high',
-      headers: {
-        'X-Priority': '1',
-      },
-    });
-    console.log(`[Email OTP Sent via Gmail Service]: To ${customerEmail} (ID: ${info.messageId})`);
-    return { success: true, provider: 'gmail_service', email: customerEmail, messageId: info.messageId };
-  } catch (primaryErr) {
-    console.warn(`[Gmail Service Error, attempting Fallback Port 465 SSL]:`, primaryErr.message);
-    lastError = primaryErr.message;
-  }
-
-  // Strategy 2: Direct Port 465 SSL
-  try {
-    const fallbackTransporter = createFallbackTransporter();
-    const info = await fallbackTransporter.sendMail({
-      from: `"Swastik Photography" <${user}>`,
-      to: customerEmail,
-      subject,
-      text: textContent,
-      html: htmlContent,
-      priority: 'high',
-      headers: {
-        'X-Priority': '1',
-      },
-    });
-    console.log(`[Email OTP Sent via Port 465 SSL]: To ${customerEmail} (ID: ${info.messageId})`);
-    return { success: true, provider: 'smtp_ssl_465', email: customerEmail, messageId: info.messageId };
-  } catch (fallbackErr) {
-    console.error(`[Fallback Port 465 Error]:`, fallbackErr.message);
-    lastError = fallbackErr.message;
-  }
-
-  console.error(`[CRITICAL: All OTP Email Transporters Failed]: ${lastError}`);
-  return { success: false, error: lastError };
+  return await dispatchEmail({
+    to: customerEmail,
+    subject,
+    text: textContent,
+    html: htmlContent,
+  });
 };
 
 module.exports = {
+  dispatchEmail,
   sendBookingNotification,
   sendCustomerBookingConfirmation,
   sendBookingStatusUpdate,
