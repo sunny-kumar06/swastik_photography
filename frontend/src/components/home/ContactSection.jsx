@@ -67,10 +67,12 @@ const ContactSection = () => {
         setFormData({ name: '', email: '', phone: '', message: '' });
       }
     } catch (err) {
+      const raw = err.response?.data?.message || err.message || '';
+      const isTechnical = /BSONError|Cast to|ObjectId|validation failed|Mongoose|MongoError|SyntaxError|Unhandled/i.test(raw);
       setStatus({
         type: 'error',
         title: 'Unable to Send Message',
-        message: err.response?.data?.message || 'Failed to send message. Please try calling us directly.',
+        message: isTechnical || !raw ? 'Failed to send message. Please try calling us directly at +91 9608782890.' : raw,
       });
     } finally {
       setLoading(false);

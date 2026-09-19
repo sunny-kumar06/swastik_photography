@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Booking = require('../models/Booking');
 const Gallery = require('../models/Gallery');
 const Contact = require('../models/Contact');
@@ -304,6 +305,13 @@ const createBooking = async (req, res, next) => {
       ? (dayShifts && dayShifts.length > 0 ? `${dayShifts[0].timeSlot} (+${dayShifts.length - 1} shifts)` : 'Multi-Shift Schedule')
       : (eventTimeSlot || 'Full Day (All Day Coverage)');
 
+    const validPackageId =
+      packageId &&
+      packageId !== 'custom-event-quote' &&
+      mongoose.Types.ObjectId.isValid(packageId)
+        ? packageId
+        : null;
+
     const newBooking = await Booking.create({
       bookingReference,
       eventType: isCustomEvent ? 'Custom Event' : eventType,
@@ -311,7 +319,7 @@ const createBooking = async (req, res, next) => {
       customEventName: customEventName ? customEventName.trim() : '',
       isPhoneVerified: Boolean(isPhoneVerified || isEmailVerified),
       isEmailVerified: Boolean(isEmailVerified || isPhoneVerified),
-      packageId: packageId || null,
+      packageId: validPackageId,
       packageName: effectivePackageName,
       packagePrice: Number(packagePrice || 0),
       isMultiDay: Boolean(isMultiDay),

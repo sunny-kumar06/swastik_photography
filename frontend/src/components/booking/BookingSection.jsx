@@ -122,8 +122,14 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
     setErrorMsg('');
 
     try {
+      const isCustom = Boolean(
+        bookingData.isCustomEvent ||
+        bookingData.eventType === 'Custom' ||
+        bookingData.packageId === 'custom-event-quote'
+      );
       const cleanData = {
         ...bookingData,
+        packageId: (isCustom || !bookingData.packageId || bookingData.packageId === 'custom-event-quote') ? null : bookingData.packageId,
         customerPhone: sanitizePhoneNumber(bookingData.customerPhone),
         customerEmail: bookingData.customerEmail.trim().toLowerCase(),
       };
@@ -139,9 +145,13 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
         });
       }
     } catch (err) {
-      setErrorMsg(
-        err.response?.data?.message || 'Something went wrong while confirming your booking. Please try again.'
-      );
+      const raw = err.response?.data?.message || err.message || '';
+      const isTechnical = /BSONError|Cast to|ObjectId|validation failed|Mongoose|MongoError|SyntaxError|Unhandled/i.test(raw);
+      if (isTechnical || !raw) {
+        setErrorMsg('Unable to complete your booking reservation at this moment. Please check your details or contact our team directly at +91 9608782890.');
+      } else {
+        setErrorMsg(raw);
+      }
     } finally {
       setSubmitting(false);
     }

@@ -64,9 +64,11 @@ const StepCustomer = ({ customerData, onChange }) => {
         }));
       }
     } catch (err) {
+      const raw = err.response?.data?.message || err.message || '';
+      const isTechnical = /BSONError|Cast to|ObjectId|validation failed|Mongoose|MongoError|SyntaxError|Unhandled/i.test(raw);
       setOtpState((prev) => ({
         ...prev,
-        error: err.response?.data?.message || err.message || 'Failed to send OTP to your email. Please verify the address and try again.',
+        error: isTechnical || !raw ? 'Unable to send OTP at this moment. Please check your email or contact us directly.' : raw,
       }));
     } finally {
       setOtpState((prev) => ({ ...prev, loading: false }));
@@ -101,9 +103,11 @@ const StepCustomer = ({ customerData, onChange }) => {
         }));
       }
     } catch (err) {
+      const raw = err.response?.data?.message || '';
+      const isTechnical = /BSONError|Cast to|ObjectId|validation failed|Mongoose|MongoError|SyntaxError|Unhandled/i.test(raw);
       setOtpState((prev) => ({
         ...prev,
-        error: err.response?.data?.message || 'Invalid or expired OTP code. Please check your email and try again.',
+        error: isTechnical || !raw ? 'Invalid or expired OTP code. Please check your email and try again.' : raw,
       }));
     } finally {
       setOtpState((prev) => ({ ...prev, verifying: false }));
