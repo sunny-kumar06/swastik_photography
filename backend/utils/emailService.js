@@ -1,18 +1,34 @@
 const nodemailer = require('nodemailer');
 
+const getSmtpConfig = () => {
+  const user = (process.env.SMTP_USER || 'sk61398sny@gmail.com').trim();
+  const rawPass = process.env.SMTP_PASS || 'hcfg wjnm vgtu mxbz';
+  const pass = rawPass.replace(/\s+/g, '');
+  return { user, pass };
+};
+
 const createTransporter = () => {
-  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: Number(process.env.SMTP_PORT) === 465,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-  }
-  return null;
+  const { user, pass } = getSmtpConfig();
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user, pass },
+    tls: { rejectUnauthorized: false },
+    connectionTimeout: 15000,
+    greetingTimeout: 10000,
+  });
+};
+
+const createFallbackTransporter = () => {
+  const { user, pass } = getSmtpConfig();
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: { user, pass },
+    tls: { rejectUnauthorized: false },
+    connectionTimeout: 15000,
+    greetingTimeout: 10000,
+  });
 };
 
 /**
@@ -301,9 +317,21 @@ const sendContactNotification = async (contact) => {
 const sendOtpEmail = async ({ email, otp, name }) => {
   const customerEmail = String(email).trim().toLowerCase();
   const customerName = name ? String(name).trim() : 'Valued Customer';
-  const transporter = createTransporter();
+  const { user } = getSmtpConfig();
 
   const subject = `🔐 ${otp} is your Swastik Photography Verification Code`;
+
+  const textContent = `Hello ${customerName},
+
+Your Swastik Photography verification code is: ${otp}
+
+This security code is valid for 10 minutes.
+For your security, do not share this code with anyone.
+
+Swastik Photography
+Ranchi & Jamshedpur, Jharkhand
+Phone: +91 9608782890
+Website: https://swastikphotography.in`;
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -357,29 +385,52 @@ const sendOtpEmail = async ({ email, otp, name }) => {
     </html>
   `;
 
-  if (transporter) {
-    try {
-      await transporter.sendMail({
-        from: `"Swastik Photography" <${process.env.SMTP_USER}>`,
-        to: customerEmail,
-        subject,
-        html: htmlContent,
-      });
-      console.log(`[Email OTP Sent]: Dispatched to ${customerEmail}`);
-      return { success: true, provider: 'smtp', email: customerEmail };
-    } catch (err) {
-      console.error('[Nodemailer OTP Error]:', err.message);
-      return { success: false, error: err.message };
-    }
-  } else {
-    console.log('\n================== [EMAIL OTP SECURITY DISPATCH] ==================');
-    console.log(`📧 To: ${customerEmail}`);
-    console.log(`🔐 OTP Code: ${otp}`);
-    console.log(`💬 Subject: ${subject}`);
-    console.log('Notice: Configure SMTP_USER and SMTP_PASS in .env for live email delivery.');
-    console.log('===================================================================\n');
-    return { success: true, simulated: true };
+  let lastError = null;
+
+  // Strategy 1: Gmail Service
+  try {
+    const transporter = createTransporter();
+    const info = await transporter.sendMail({
+      from: `"Swastik Photography" <${user}>`,
+      to: customerEmail,
+      subject,
+      text: textContent,
+      html: htmlContent,
+      priority: 'high',
+      headers: {
+        'X-Priority': '1',
+      },
+    });
+    console.log(`[Email OTP Sent via Gmail Service]: To ${customerEmail} (ID: ${info.messageId})`);
+    return { success: true, provider: 'gmail_service', email: customerEmail, messageId: info.messageId };
+  } catch (primaryErr) {
+    console.warn(`[Gmail Service Error, attempting Fallback Port 465 SSL]:`, primaryErr.message);
+    lastError = primaryErr.message;
   }
+
+  // Strategy 2: Direct Port 465 SSL
+  try {
+    const fallbackTransporter = createFallbackTransporter();
+    const info = await fallbackTransporter.sendMail({
+      from: `"Swastik Photography" <${user}>`,
+      to: customerEmail,
+      subject,
+      text: textContent,
+      html: htmlContent,
+      priority: 'high',
+      headers: {
+        'X-Priority': '1',
+      },
+    });
+    console.log(`[Email OTP Sent via Port 465 SSL]: To ${customerEmail} (ID: ${info.messageId})`);
+    return { success: true, provider: 'smtp_ssl_465', email: customerEmail, messageId: info.messageId };
+  } catch (fallbackErr) {
+    console.error(`[Fallback Port 465 Error]:`, fallbackErr.message);
+    lastError = fallbackErr.message;
+  }
+
+  console.error(`[CRITICAL: All OTP Email Transporters Failed]: ${lastError}`);
+  return { success: false, error: lastError };
 };
 
 module.exports = {

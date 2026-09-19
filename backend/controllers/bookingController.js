@@ -88,10 +88,19 @@ const sendBookingOtp = async (req, res, next) => {
 
     console.log(`\n🔑 [EMAIL OTP DISPATCH] Email: ${targetEmail} | Code: ${otp} (Valid 10 mins) | Dispatched: ${emailResult.success}\n`);
 
+    if (!emailResult.success) {
+      console.error(`[OTP Dispatch Error]:`, emailResult.error);
+      return res.status(500).json({
+        success: false,
+        message: `Unable to dispatch verification email: ${emailResult.error || 'SMTP delivery error'}. Please check your email address or contact support at +91 9608782890.`,
+        error: emailResult.error,
+      });
+    }
+
     res.json({
       success: true,
       message: `Verification code sent to ${targetEmail}. Please check your inbox (or spam folder).`,
-      emailDispatched: emailResult.success,
+      emailDispatched: true,
     });
   } catch (error) {
     next(error);

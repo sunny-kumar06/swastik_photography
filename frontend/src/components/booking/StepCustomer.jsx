@@ -55,12 +55,18 @@ const StepCustomer = ({ customerData, onChange }) => {
           successMsg: `Verification code sent to ${cleanEmail}. Check your inbox or spam folder.`,
           countdown: 60,
           otp: '',
+          error: '',
+        }));
+      } else {
+        setOtpState((prev) => ({
+          ...prev,
+          error: res.data?.message || 'Failed to dispatch email OTP. Please check the email address and try again.',
         }));
       }
     } catch (err) {
       setOtpState((prev) => ({
         ...prev,
-        error: err.response?.data?.message || 'Failed to send OTP to your email. Please verify the address and try again.',
+        error: err.response?.data?.message || err.message || 'Failed to send OTP to your email. Please verify the address and try again.',
       }));
     } finally {
       setOtpState((prev) => ({ ...prev, loading: false }));
