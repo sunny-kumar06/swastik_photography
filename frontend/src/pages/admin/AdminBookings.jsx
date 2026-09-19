@@ -296,9 +296,25 @@ const AdminBookings = () => {
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <div className="text-slate-200 font-medium">{b.eventType}</div>
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-slate-200 font-medium">
+                          {b.isCustomEvent && b.customEventName ? b.customEventName : b.eventType}
+                        </span>
+                        {b.isCustomEvent && (
+                          <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[9px] border border-amber-500/30 uppercase">
+                            Custom
+                          </span>
+                        )}
+                      </div>
                       <div className="text-slate-400 text-[11px]">
-                        {b.packageName} {b.packagePrice > 0 ? `(${formatPrice(b.packagePrice)})` : ''}
+                        {b.packageName}{' '}
+                        {b.packagePrice > 0 ? (
+                          `(${formatPrice(b.packagePrice)})`
+                        ) : b.isCustomEvent ? (
+                          <span className="text-amber-400 font-semibold">(Quote within 24h)</span>
+                        ) : (
+                          ''
+                        )}
                       </div>
                     </td>
 
@@ -311,7 +327,11 @@ const AdminBookings = () => {
                           </span>
                         )}
                       </div>
-                      {b.isMultiDay && b.eventDates && b.eventDates.length > 1 ? (
+                      {b.dayShifts && b.dayShifts.length > 0 ? (
+                        <div className="text-[10px] text-amber-300/90 truncate max-w-[190px]">
+                          {b.dayShifts.map((ds, idx) => `D${idx + 1}: ${ds.timeSlot.split(' ')[0]}`).join(' • ')}
+                        </div>
+                      ) : b.isMultiDay && b.eventDates && b.eventDates.length > 1 ? (
                         <div className="text-[10px] text-slate-400 truncate max-w-[180px]">
                           {b.eventDates.join(', ')}
                         </div>
@@ -536,13 +556,28 @@ const AdminBookings = () => {
 
               <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
                 <span className="text-slate-400 uppercase text-[10px] block">Event & Package</span>
-                <span className="text-sm font-semibold text-amber-400">{selectedBooking.eventType}</span>
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-sm font-semibold text-amber-400">
+                    {selectedBooking.isCustomEvent && selectedBooking.customEventName
+                      ? selectedBooking.customEventName
+                      : selectedBooking.eventType}
+                  </span>
+                  {selectedBooking.isCustomEvent && (
+                    <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold text-[9px] uppercase border border-amber-500/30">
+                      Custom
+                    </span>
+                  )}
+                </div>
                 <div className="mt-1 text-white">{selectedBooking.packageName}</div>
-                {selectedBooking.packagePrice > 0 && (
+                {selectedBooking.packagePrice > 0 ? (
                   <div className="text-emerald-400 font-bold font-cinematic">
                     {formatPrice(selectedBooking.packagePrice)}
                   </div>
-                )}
+                ) : selectedBooking.isCustomEvent ? (
+                  <div className="text-amber-400 text-[11px] font-semibold mt-1">
+                    ⚡ Quote within 24 hrs
+                  </div>
+                ) : null}
               </div>
 
               <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
@@ -550,17 +585,23 @@ const AdminBookings = () => {
                   {selectedBooking.isMultiDay ? `Celebration Dates (${selectedBooking.totalDays || selectedBooking.eventDates?.length || 1} Days)` : 'Date & Time'}
                 </span>
                 {selectedBooking.isMultiDay && selectedBooking.eventDates && selectedBooking.eventDates.length > 0 ? (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {selectedBooking.eventDates.map((d, i) => (
-                      <span key={d} className="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-mono text-[10px] font-bold">
-                        D{i + 1}: {d}
-                      </span>
-                    ))}
+                  <div className="space-y-1 mt-1">
+                    {selectedBooking.eventDates.map((d, i) => {
+                      const shift = (selectedBooking.dayShifts || []).find((ds) => ds.date === d)?.timeSlot || selectedBooking.eventTimeSlot || 'Full Day';
+                      return (
+                        <div key={d} className="flex items-center justify-between text-[11px]">
+                          <span className="font-mono text-amber-300 font-bold">D{i + 1}: {d}</span>
+                          <span className="text-slate-300 font-medium">{shift.split(' ')[0]} Shift</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
-                  <span className="text-sm font-semibold text-white font-mono">{selectedBooking.eventDate}</span>
+                  <>
+                    <span className="text-sm font-semibold text-white font-mono">{selectedBooking.eventDate}</span>
+                    <div className="text-slate-300 mt-1 text-[11px]">{selectedBooking.eventTimeSlot}</div>
+                  </>
                 )}
-                <div className="text-slate-300 mt-1 text-[11px]">{selectedBooking.eventTimeSlot}</div>
               </div>
 
               <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">

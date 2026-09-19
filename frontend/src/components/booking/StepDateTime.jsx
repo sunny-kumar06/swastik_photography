@@ -27,14 +27,17 @@ const StepDateTime = ({
   eventType,
   isMultiDay,
   eventDates = [],
+  dayShifts = [],
   eventDate,
   eventTimeSlot,
   onChangeMultiDayMode,
   onChangeDates,
+  onChangeDayShifts,
   onChangeDate,
   onChangeSlot,
 }) => {
   const [unavailableSlots, setUnavailableSlots] = useState([]);
+  const [dateAvailMap, setDateAvailMap] = useState({});
   const [isFullyBooked, setIsFullyBooked] = useState(false);
   const [checking, setChecking] = useState(false);
   const [bookedDatesList, setBookedDatesList] = useState([]);
@@ -68,26 +71,29 @@ const StepDateTime = ({
           const conflicts = [];
           let anyFullyBooked = false;
           const unavailSlotsArray = [];
+          const availMap = {};
 
           for (const d of datesToCheck) {
             const res = await bookingsApi.checkAvailability(d);
             if (res.data) {
               const una = res.data.unavailableSlots || [];
+              availMap[d] = una;
               unavailSlotsArray.push(...una);
               if (res.data.isFullyBooked || una.length >= timeSlots.length) {
                 anyFullyBooked = true;
                 conflicts.push(d);
-              } else if (eventTimeSlot && una.includes(eventTimeSlot)) {
+              } else if (!isMultiDay && eventTimeSlot && una.includes(eventTimeSlot)) {
                 conflicts.push(d);
               }
             }
           }
 
+          setDateAvailMap(availMap);
           setConflictDates(arrayFromSet(conflicts));
           setUnavailableSlots(arrayFromSet(unavailSlotsArray));
           setIsFullyBooked(anyFullyBooked);
 
-          if (anyFullyBooked || (eventTimeSlot && unavailSlotsArray.includes(eventTimeSlot))) {
+          if (!isMultiDay && (anyFullyBooked || (eventTimeSlot && unavailSlotsArray.includes(eventTimeSlot)))) {
             onChangeSlot('');
           }
         } catch (err) {
@@ -99,10 +105,29 @@ const StepDateTime = ({
       checkAll();
     } else {
       setUnavailableSlots([]);
+      setDateAvailMap({});
       setIsFullyBooked(false);
       setConflictDates([]);
     }
   }, [isMultiDay, eventDate, JSON.stringify(eventDates)]);
+
+  // Auto initialize or sync dayShifts whenever eventDates change
+  useEffect(() => {
+    if (isMultiDay && Array.isArray(eventDates) && eventDates.length > 0) {
+      const currentMap = new Map((dayShifts || []).map((ds) => [ds.date, ds.timeSlot]));
+      const updatedShifts = eventDates.map((d) => ({
+        date: d,
+        timeSlot: currentMap.get(d) || 'Full Day (All Day Coverage)',
+      }));
+
+      // Only update if changed
+      if (JSON.stringify(updatedShifts) !== JSON.stringify(dayShifts)) {
+        if (onChangeDayShifts) {
+          onChangeDayShifts(updatedShifts);
+        }
+      }
+    }
+  }, [isMultiDay, JSON.stringify(eventDates)]);
 
   function arrayFromSet(arr) {
     return Array.from(new Set(arr));
@@ -388,10 +413,10 @@ const StepDateTime = ({
         </div>
 
         {/* Time Slot Selection */}
-        <div className="md:col-span-7 space-y-3">
+        <div className="md:col-span-7 space-y-4">
           <div className="flex items-center justify-between">
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-              Preferred Time Slot *
+              {isMultiDay ? 'Select Shift for Everyday *' : 'Preferred Time Slot *'}
             </label>
             {checking && (
               <span className="text-[10px] text-amber-400 animate-pulse font-mono">
@@ -412,7 +437,123 @@ const StepDateTime = ({
                 Please adjust your date selection or choose alternative dates to continue.
               </p>
             </div>
+          ) : isMultiDay ? (
+            /* MULTI-DAY: Shift Selection For Everyday */
+            <div className="space-y-4">
+              {/* Quick Preset Selector for all days */}
+              <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="text-[11px] font-semibold text-slate-400">
+                  Quick Apply to All Days:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = eventDates.map((d) => ({ date: d, timeSlot: 'Full Day (All Day Coverage)' }));
+                      onChangeDayShifts(updated);
+                      onChangeSlot('Full Day (All Day Coverage)');
+                    }}
+                    className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-colors"
+                  >
+                    All Full Day
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = eventDates.map((d) => ({ date: d, timeSlot: 'Morning (08:00 AM - 01:00 PM)' }));
+                      onChangeDayShifts(updated);
+                      onChangeSlot('Morning (08:00 AM - 01:00 PM)');
+                    }}
+                    className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-colors"
+                  >
+                    All Morning
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = eventDates.map((d) => ({ date: d, timeSlot: 'Evening (04:00 PM - 10:00 PM)' }));
+                      onChangeDayShifts(updated);
+                      onChangeSlot('Evening (04:00 PM - 10:00 PM)');
+                    }}
+                    className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-colors"
+                  >
+                    All Evening
+                  </button>
+                </div>
+              </div>
+
+              {/* Per-Day Shift Cards */}
+              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                {eventDates.map((dateStr, idx) => {
+                  const dayShift = (dayShifts || []).find((ds) => ds.date === dateStr);
+                  const selectedShift = dayShift?.timeSlot || 'Full Day (All Day Coverage)';
+                  const dateUnavailableSlots = dateAvailMap[dateStr] || [];
+
+                  return (
+                    <div
+                      key={dateStr}
+                      className="p-3.5 sm:p-4 rounded-2xl bg-slate-900/70 border border-slate-800 shadow-md space-y-2.5"
+                    >
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                        <div className="flex items-center space-x-2">
+                          <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold text-[10px] uppercase border border-amber-500/30">
+                            Day {idx + 1}
+                          </span>
+                          <span className="font-mono font-bold text-white text-xs">{dateStr}</span>
+                        </div>
+                        <span className="text-[10px] font-mono text-slate-400">
+                          {selectedShift.split(' ')[0]} Shift Selected
+                        </span>
+                      </div>
+
+                      {/* 3 Shift Pills for this date */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {timeSlots.map((slot) => {
+                          const isUnavail = dateUnavailableSlots.includes(slot.id);
+                          const isCurrent = selectedShift === slot.id;
+
+                          return (
+                            <button
+                              key={slot.id}
+                              type="button"
+                              disabled={isUnavail}
+                              onClick={() => {
+                                const existing = (dayShifts || []).filter((item) => item.date !== dateStr);
+                                const updated = [...existing, { date: dateStr, timeSlot: slot.id }];
+                                updated.sort((a, b) => eventDates.indexOf(a.date) - eventDates.indexOf(b.date));
+                                onChangeDayShifts(updated);
+                                onChangeSlot(slot.id);
+                              }}
+                              className={`p-2.5 rounded-xl border text-left transition-all text-xs flex flex-col justify-between ${
+                                isUnavail
+                                  ? 'bg-slate-950/40 border-slate-900 opacity-40 cursor-not-allowed'
+                                  : isCurrent
+                                  ? 'bg-brand-accent/20 border-brand-accent ring-1 ring-brand-accent text-white shadow-glow-red'
+                                  : 'bg-slate-950/80 border-slate-800 hover:border-slate-700 text-slate-300'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between w-full mb-1">
+                                <span className="font-bold text-[11px] truncate">{slot.label.split(' ')[0]}</span>
+                                {isUnavail ? (
+                                  <span className="text-[9px] uppercase font-bold text-rose-400">Taken</span>
+                                ) : isCurrent ? (
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-brand-accent" />
+                                ) : null}
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-mono block">
+                                {slot.id.includes('Morning') ? '08AM - 01PM' : slot.id.includes('Evening') ? '04PM - 10PM' : 'Full Day'}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           ) : (
+            /* SINGLE DAY: Standard Slot Cards */
             <div className="space-y-3">
               {timeSlots.map((slot) => {
                 const isUnavail = unavailableSlots.includes(slot.id);
@@ -435,7 +576,7 @@ const StepDateTime = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div
-                          className={`p-younded-xl ${
+                          className={`p-2 rounded-xl ${
                             isUnavail
                               ? 'bg-slate-800/50 text-slate-600'
                               : isSelected

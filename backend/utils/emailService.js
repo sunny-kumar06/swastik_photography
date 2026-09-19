@@ -77,15 +77,20 @@ const sendBookingNotification = async (booking) => {
           </div>
           <div class="field-group">
             <div class="label">Event Type</div>
-            <div class="value">${booking.eventType}</div>
+            <div class="value">${booking.eventType}${booking.isCustomEvent && booking.customEventName ? ` (${booking.customEventName})` : ''}</div>
           </div>
+          ${booking.isCustomEvent ? `
+          <div class="field-group" style="background:#451a03; padding:10px; border-radius:8px; border: 1px solid #b45309;">
+            <div class="label" style="color:#fbbf24;">⚡ CUSTOM EVENT QUOTE</div>
+            <div class="value" style="color:#fef08a;"><strong>${booking.customEventName || 'Custom Celebration'}</strong> — Price will be updated to client within 24 hours.</div>
+          </div>` : ''}
           <div class="field-group">
             <div class="label">Package</div>
             <div class="value">${booking.packageName}</div>
           </div>
           <div class="field-group">
             <div class="label">Price</div>
-            <div class="value price-tag">${formattedPrice}</div>
+            <div class="value price-tag">${booking.isCustomEvent && booking.packagePrice === 0 ? 'Pending Quote (Update within 24h)' : formattedPrice}</div>
           </div>
           <div class="field-group">
             <div class="label">${booking.isMultiDay ? 'Dates (' + (booking.totalDays || booking.eventDates?.length || 1) + ' Days)' : 'Date'}</div>
@@ -97,6 +102,13 @@ const sendBookingNotification = async (booking) => {
               }
             </div>
           </div>
+          ${booking.dayShifts && booking.dayShifts.length > 0 ? `
+          <div class="field-group">
+            <div class="label">Shifts Per Day</div>
+            <div class="value">
+              ${booking.dayShifts.map((ds, idx) => `<div style="margin:2px 0;"><strong style="color:#fbbf24;">Day ${idx + 1} (${ds.date}):</strong> ${ds.timeSlot}</div>`).join('')}
+            </div>
+          </div>` : ''}
           <div class="field-group">
             <div class="label">Time Slot</div>
             <div class="value">${booking.eventTimeSlot}</div>

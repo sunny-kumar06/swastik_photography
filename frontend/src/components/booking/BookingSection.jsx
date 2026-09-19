@@ -20,6 +20,9 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
 
   const [bookingData, setBookingData] = useState({
     eventType: preselectedEvent || 'Wedding',
+    isCustomEvent: preselectedEvent === 'Custom',
+    customEventName: '',
+    isPhoneVerified: false,
     packageId: preselectedPackage?._id || null,
     packageName: preselectedPackage?.name || 'Wedding Premium',
     packagePrice: preselectedPackage?.price || 25000,
@@ -27,6 +30,7 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
     isMultiDay: false,
     totalDays: 1,
     eventDates: [],
+    dayShifts: [],
     eventDate: '',
     eventTimeSlot: '',
     customerName: '',
@@ -38,9 +42,15 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
 
   const handleNextStep = () => {
     setErrorMsg('');
-    if (currentStep === 1 && !bookingData.eventType) {
-      setErrorMsg('Please select an event type to continue.');
-      return;
+    if (currentStep === 1) {
+      if (!bookingData.eventType) {
+        setErrorMsg('Please select an event type to continue.');
+        return;
+      }
+      if (bookingData.eventType === 'Custom' && !bookingData.customEventName.trim()) {
+        setErrorMsg('Please enter your custom event name to proceed.');
+        return;
+      }
     }
     if (currentStep === 2 && !bookingData.packageName) {
       setErrorMsg('Please select a package to continue.');
@@ -58,9 +68,9 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
           return;
         }
       }
-      if (!bookingData.eventTimeSlot) {
+      if (!bookingData.eventTimeSlot && (!bookingData.dayShifts || bookingData.dayShifts.length === 0)) {
         setErrorMsg(
-          'Please select an available time slot for your event, or write a query message to admin.'
+          'Please select an available time slot or shift for your event, or write a query message to admin.'
         );
         return;
       }
@@ -84,6 +94,12 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
 
       if (!isValidEmail(bookingData.customerEmail)) {
         setErrorMsg('Please enter a valid email address (e.g. yourname@example.com).');
+        return;
+      }
+
+      // MANDATORY OTP VERIFICATION
+      if (!bookingData.isPhoneVerified) {
+        setErrorMsg('Please verify your mobile number via OTP before proceeding.');
         return;
       }
     }
@@ -224,7 +240,19 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
               {currentStep === 1 && (
                 <StepEvent
                   selectedEvent={bookingData.eventType}
-                  onSelect={(ev) => setBookingData((p) => ({ ...p, eventType: ev }))}
+                  onSelect={(ev) =>
+                    setBookingData((p) => ({
+                      ...p,
+                      eventType: ev,
+                      isCustomEvent: ev === 'Custom',
+                      packagePrice: ev === 'Custom' ? 0 : p.packagePrice,
+                      packageName: ev === 'Custom' ? 'Custom Bespoke Quotation' : p.packageName,
+                    }))
+                  }
+                  customEventName={bookingData.customEventName}
+                  onCustomEventNameChange={(name) =>
+                    setBookingData((p) => ({ ...p, customEventName: name }))
+                  }
                 />
               )}
 
@@ -242,6 +270,7 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
                       packageId: pkg._id,
                       packageName: pkg.name,
                       packagePrice: pkg.price,
+                      basePackagePrice: pkg.price,
                     }))
                   }
                 />
@@ -252,6 +281,7 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
                   eventType={bookingData.eventType}
                   isMultiDay={bookingData.isMultiDay}
                   eventDates={bookingData.eventDates}
+                  dayShifts={bookingData.dayShifts}
                   eventDate={bookingData.eventDate}
                   eventTimeSlot={bookingData.eventTimeSlot}
                   onChangeMultiDayMode={(isMulti) => {
@@ -262,7 +292,8 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
                       isMultiDay: isMulti,
                       totalDays: days,
                       basePackagePrice: basePrice,
-                      packagePrice: isMulti ? basePrice * days : basePrice,
+                      packagePrice: p.isCustomEvent ? 0 : (isMulti ? basePrice * days : basePrice),
+                      eventTimeSlot: isMulti ? 'Multi-Shift Schedule' : p.eventTimeSlot,
                     }));
                   }}
                   onChangeDates={(dates) => {
@@ -273,9 +304,16 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
                       eventDates: dates,
                       totalDays: days,
                       basePackagePrice: basePrice,
-                      packagePrice: p.isMultiDay ? basePrice * days : basePrice,
+                      packagePrice: p.isCustomEvent ? 0 : (p.isMultiDay ? basePrice * days : basePrice),
                     }));
                   }}
+                  onChangeDayShifts={(shifts) =>
+                    setBookingData((p) => ({
+                      ...p,
+                      dayShifts: shifts,
+                      eventTimeSlot: 'Multi-Shift Schedule',
+                    }))
+                  }
                   onChangeDate={(date) => setBookingData((p) => ({ ...p, eventDate: date }))}
                   onChangeSlot={(slot) => setBookingData((p) => ({ ...p, eventTimeSlot: slot }))}
                 />
@@ -339,9 +377,17 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
                   setCurrentStep(1);
                   setBookingData({
                     eventType: 'Wedding',
+                    isCustomEvent: false,
+                    customEventName: '',
+                    isPhoneVerified: false,
                     packageId: null,
                     packageName: 'Wedding Premium',
                     packagePrice: 25000,
+                    basePackagePrice: 25000,
+                    isMultiDay: false,
+                    totalDays: 1,
+                    eventDates: [],
+                    dayShifts: [],
                     eventDate: '',
                     eventTimeSlot: '',
                     customerName: '',

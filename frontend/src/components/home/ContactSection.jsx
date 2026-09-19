@@ -60,13 +60,16 @@ const ContactSection = () => {
       if (res.data && res.data.success) {
         setStatus({
           type: 'success',
-          message: 'Thank you! Your message has been sent directly to Swastik Photography. We will get in touch shortly.',
+          title: 'Enquiry Sent Directly to Admin',
+          message:
+            'Your enquiry has been delivered directly to the Swastik Photography Admin! We have logged your details. Our team will review your message and contact you within 24 hours via Phone or WhatsApp.',
         });
         setFormData({ name: '', email: '', phone: '', message: '' });
       }
     } catch (err) {
       setStatus({
         type: 'error',
+        title: 'Unable to Send Message',
         message: err.response?.data?.message || 'Failed to send message. Please try calling us directly.',
       });
     } finally {
@@ -164,18 +167,33 @@ const ContactSection = () => {
 
               {status && (
                 <div
-                  className={`p-4 rounded-xl mb-6 flex items-start space-x-3 text-sm ${
+                  className={`p-4 sm:p-5 rounded-2xl mb-6 space-y-2 border text-sm ${
                     status.type === 'success'
-                      ? 'bg-emerald-950/60 border border-emerald-500 text-emerald-200'
-                      : 'bg-rose-950/60 border border-rose-500 text-rose-200'
+                      ? 'bg-emerald-950/70 border-emerald-500 text-emerald-200'
+                      : 'bg-rose-950/70 border-rose-500 text-rose-200'
                   }`}
                 >
-                  {status.type === 'success' ? (
-                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-400" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-400" />
+                  <div className="flex items-center space-x-2">
+                    {status.type === 'success' ? (
+                      <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-400" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-400" />
+                    )}
+                    <span className="font-bold text-base text-white">
+                      {status.title || (status.type === 'success' ? 'Enquiry Delivered to Admin' : 'Notification')}
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm leading-relaxed text-slate-200 pl-7">
+                    {status.message}
+                  </p>
+                  {status.type === 'success' && (
+                    <div className="pt-2 pl-7 flex items-center space-x-2 text-xs text-amber-300">
+                      <span className="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-[10px] font-bold uppercase tracking-wider">
+                        Admin Notified
+                      </span>
+                      <span>Response guaranteed within 24 hours</span>
+                    </div>
                   )}
-                  <span>{status.message}</span>
                 </div>
               )}
 

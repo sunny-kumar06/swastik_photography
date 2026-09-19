@@ -69,11 +69,18 @@ const StepSummary = ({ bookingData, onConfirm, submitting, confirmedResult }) =>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-slate-800 pb-4 sm:pb-5">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400 block">
-              Event Classification
+              {bookingData.isCustomEvent || bookingData.eventType === 'Custom' ? 'Custom Celebration' : 'Event Classification'}
             </span>
             <h5 className="text-xl font-cinematic font-bold text-white">
-              {bookingData.eventType}
+              {bookingData.isCustomEvent && bookingData.customEventName
+                ? bookingData.customEventName
+                : bookingData.eventType}
             </h5>
+            {bookingData.isCustomEvent && (
+              <span className="inline-block px-2 py-0.5 mt-1 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                Make An Event (Custom)
+              </span>
+            )}
           </div>
 
           <div className="text-left sm:text-right">
@@ -81,44 +88,87 @@ const StepSummary = ({ bookingData, onConfirm, submitting, confirmedResult }) =>
               Package Investment
             </span>
             <div className="text-xl sm:text-2xl font-cinematic font-extrabold text-emerald-400">
-              {formatPrice(bookingData.packagePrice)}
+              {bookingData.isCustomEvent || bookingData.packagePrice === 0
+                ? 'Pending Quote'
+                : formatPrice(bookingData.packagePrice)}
             </div>
-            <span className="text-xs text-slate-400">{bookingData.packageName}</span>
+            <span className="text-xs text-slate-400 block">{bookingData.packageName}</span>
           </div>
         </div>
 
-        {/* Schedule & Location Details */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm text-slate-300">
-          <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-            <Calendar className="w-4 h-4 text-brand-accent mt-0.5 flex-shrink-0" />
-            <div className="min-w-0 flex-1">
-              <span className="text-[10px] uppercase text-slate-400 block">
-                {bookingData.isMultiDay ? `Event Dates (${bookingData.totalDays || bookingData.eventDates?.length || 1} Days)` : 'Event Date'}
-              </span>
-              {bookingData.isMultiDay && bookingData.eventDates && bookingData.eventDates.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {bookingData.eventDates.map((d, i) => (
-                    <span
-                      key={d}
-                      className="px-2 py-0.5 rounded-md bg-slate-800 text-amber-300 font-mono text-[11px] font-semibold border border-slate-700"
-                    >
-                      Day {i + 1}: {d}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <span className="font-semibold text-white font-mono">{bookingData.eventDate}</span>
-              )}
+        {/* Custom Event 24h Update / Contact Admin Banner */}
+        {(bookingData.isCustomEvent || bookingData.eventType === 'Custom') && (
+          <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-500/40 text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="space-y-0.5">
+              <span className="font-bold text-white block">Price will be updated in 24 hrs or contact admin</span>
+              <p className="text-slate-300 text-[11px]">
+                Our lead cinematographer will review your custom event and contact you within 24 hours with exact pricing.
+              </p>
             </div>
+            <a
+              href={`https://wa.me/919608782890?text=Hi%20Swastik%20Photography%2C%20I%20am%20booking%20a%20custom%20event%3A%20${encodeURIComponent(
+                bookingData.customEventName || 'Custom Event'
+              )}.%20Please%20provide%20a%20pricing%20estimate.`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] uppercase tracking-wider whitespace-nowrap self-start sm:self-auto transition-colors"
+            >
+              WhatsApp Admin
+            </a>
           </div>
+        )}
 
-          <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-            <Clock className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-            <div>
-              <span className="text-[10px] uppercase text-slate-400 block">Time Slot</span>
-              <span className="font-semibold text-white">{bookingData.eventTimeSlot}</span>
+        {/* Schedule & Shift Breakdown */}
+        <div className="space-y-3">
+          {bookingData.isMultiDay && bookingData.eventDates && bookingData.eventDates.length > 0 ? (
+            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800/80 pb-2">
+                <span className="font-bold uppercase tracking-wider text-[10px] text-amber-400">
+                  Daily Schedule & Shift Breakdown ({bookingData.eventDates.length} Days)
+                </span>
+                <span className="text-[10px]">Individual Day Shifts</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                {bookingData.eventDates.map((d, i) => {
+                  const shift = (bookingData.dayShifts || []).find((ds) => ds.date === d)?.timeSlot || bookingData.eventTimeSlot || 'Full Day';
+                  return (
+                    <div
+                      key={d}
+                      className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between text-xs"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-bold text-[10px]">
+                          Day {i + 1}
+                        </span>
+                        <span className="font-mono text-white font-semibold text-[11px]">{d}</span>
+                      </div>
+                      <span className="text-amber-400 font-medium text-[11px]">
+                        {shift.split(' ')[0]} Shift
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm text-slate-300">
+              <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                <Calendar className="w-4 h-4 text-brand-accent mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="text-[10px] uppercase text-slate-400 block">Event Date</span>
+                  <span className="font-semibold text-white font-mono">{bookingData.eventDate}</span>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                <Clock className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="text-[10px] uppercase text-slate-400 block">Time Slot</span>
+                  <span className="font-semibold text-white">{bookingData.eventTimeSlot}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Customer & Location */}

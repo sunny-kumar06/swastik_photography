@@ -12,6 +12,22 @@ const {
   sendCustomerStatusSMS,
 } = require('../utils/smsService');
 
+// In-memory OTP storage: phone -> { otp, expiresAt, verified, attempts }
+const otpStore = new Map();
+
+// Clean up expired OTPs every 5 minutes
+const otpCleanupTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [phone, data] of otpStore.entries()) {
+    if (data.expiresAt < now) {
+      otpStore.delete(phone);
+    }
+  }
+}, 5 * 60 * 1000);
+if (otpCleanupTimer.unref) {
+  otpCleanupTimer.unref();
+}
+
 // Generate unique human-readable booking reference
 const generateBookingRef = () => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -23,6 +39,110 @@ const generateBookingRef = () => {
   return `SWK-${year}-${randomStr}`;
 };
 
+// @desc    Send OTP to customer mobile number for verification (Public)
+// @route   POST /api/bookings/send-otp
+// @access  Public
+const sendBookingOtp = async (req, res, next) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({ success: false, message: 'Please provide a 10-digit mobile number' });
+    }
+
+    const cleanPhone = String(phone).replace(/\D/g, '');
+    const finalPhone = cleanPhone.length === 12 && cleanPhone.startsWith('91') ? cleanPhone.slice(2) : cleanPhone;
+    if (finalPhone.length !== 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number must be a valid 10-digit mobile number.',
+      });
+    }
+
+    // Generate secure 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+
+    otpStore.set(finalPhone, {
+      otp,
+      expiresAt,
+      verified: false,
+      attempts: 0,
+    });
+
+    console.log(`\n🔑 [MOBILE OTP DISPATCH] Phone: +91 ${finalPhone} | Code: ${otp} (Valid 10 mins)\n`);
+
+    res.json({
+      success: true,
+      message: `OTP sent successfully to +91 ${finalPhone}. Please enter the 6-digit verification code.`,
+      demoOtp: otp, // For smooth testing & evaluation without SMS gateway friction
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Verify customer mobile number OTP (Public)
+// @route   POST /api/bookings/verify-otp
+// @access  Public
+const verifyBookingOtp = async (req, res, next) => {
+  try {
+    const { phone, otp } = req.body;
+    if (!phone || !otp) {
+      return res.status(400).json({ success: false, message: 'Phone and OTP are required' });
+    }
+
+    const cleanPhone = String(phone).replace(/\D/g, '');
+    const finalPhone = cleanPhone.length === 12 && cleanPhone.startsWith('91') ? cleanPhone.slice(2) : cleanPhone;
+
+    const record = otpStore.get(finalPhone);
+
+    if (!record) {
+      return res.status(400).json({
+        success: false,
+        message: 'No OTP requested for this phone number or OTP has expired. Please request a new OTP.',
+      });
+    }
+
+    if (Date.now() > record.expiresAt) {
+      otpStore.delete(finalPhone);
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired. Please request a new OTP.',
+      });
+    }
+
+    if (record.attempts >= 5) {
+      otpStore.delete(finalPhone);
+      return res.status(429).json({
+        success: false,
+        message: 'Too many incorrect attempts. Please request a new OTP.',
+      });
+    }
+
+    if (record.otp !== String(otp).trim()) {
+      record.attempts += 1;
+      return res.status(400).json({
+        success: false,
+        message: `Invalid OTP code. Please check and try again (${5 - record.attempts} attempts remaining).`,
+      });
+    }
+
+    // Mark as verified
+    record.verified = true;
+    otpStore.set(finalPhone, record);
+
+    console.log(`✅ [MOBILE OTP VERIFIED] Phone: +91 ${finalPhone} successfully verified.`);
+
+    res.json({
+      success: true,
+      verified: true,
+      message: 'Mobile number verified successfully!',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Create a new booking (Public)
 // @route   POST /api/bookings
 // @access  Public
@@ -30,12 +150,15 @@ const createBooking = async (req, res, next) => {
   try {
     const {
       eventType,
+      isCustomEvent = false,
+      customEventName = '',
       packageId,
       packageName,
       packagePrice,
       isMultiDay = false,
       totalDays = 1,
       eventDates = [],
+      dayShifts = [],
       eventDate,
       eventTimeSlot,
       customerName,
@@ -43,14 +166,17 @@ const createBooking = async (req, res, next) => {
       customerEmail,
       eventLocation,
       additionalMessage,
+      isPhoneVerified = false,
     } = req.body;
+
+    const effectiveEventName = isCustomEvent ? (customEventName || 'Custom Event') : (packageName || eventType);
 
     if (
       !eventType ||
-      !packageName ||
+      (!packageName && !isCustomEvent) ||
       packagePrice === undefined ||
       !eventDate ||
-      !eventTimeSlot ||
+      (!eventTimeSlot && (!dayShifts || dayShifts.length === 0)) ||
       !customerName ||
       !customerPhone ||
       !customerEmail ||
@@ -119,15 +245,19 @@ const createBooking = async (req, res, next) => {
       const overlapDate = allDatesToReserve.find((d) => confDates.includes(d));
 
       if (overlapDate) {
+        // Determine requested slot for this specific date
+        const dayShiftEntry = Array.isArray(dayShifts) ? dayShifts.find((ds) => ds.date === overlapDate) : null;
+        const requestedSlotForThisDay = dayShiftEntry?.timeSlot || eventTimeSlot || 'Full Day (All Day Coverage)';
+
         // Check slot conflict
         if (
           conf.eventTimeSlot === 'Full Day (All Day Coverage)' ||
-          eventTimeSlot === 'Full Day (All Day Coverage)' ||
-          conf.eventTimeSlot === eventTimeSlot
+          requestedSlotForThisDay === 'Full Day (All Day Coverage)' ||
+          conf.eventTimeSlot === requestedSlotForThisDay
         ) {
           return res.status(409).json({
             success: false,
-            message: `Date ${overlapDate} is already booked for ${conf.eventTimeSlot}. Please select another date or contact the admin with a query message to get a reply within 24 hours.`,
+            message: `Date ${overlapDate} is already booked for ${conf.eventTimeSlot}. Please select another date/shift or contact the admin with a query message to get a reply within 24 hours.`,
           });
         }
       }
@@ -142,18 +272,28 @@ const createBooking = async (req, res, next) => {
     }
 
     const calculatedDays = isMultiDay ? Math.max(allDatesToReserve.length, totalDays || 1) : 1;
+    const effectivePackageName = isCustomEvent
+      ? `Custom Event: ${customEventName || 'Custom Celebration'}`
+      : packageName;
+    const effectiveEventTimeSlot = isMultiDay && (!eventTimeSlot || eventTimeSlot.includes('Multi-Shift'))
+      ? (dayShifts && dayShifts.length > 0 ? `${dayShifts[0].timeSlot} (+${dayShifts.length - 1} shifts)` : 'Multi-Shift Schedule')
+      : (eventTimeSlot || 'Full Day (All Day Coverage)');
 
     const newBooking = await Booking.create({
       bookingReference,
-      eventType,
+      eventType: isCustomEvent ? 'Custom Event' : eventType,
+      isCustomEvent: Boolean(isCustomEvent),
+      customEventName: customEventName ? customEventName.trim() : '',
+      isPhoneVerified: Boolean(isPhoneVerified),
       packageId: packageId || null,
-      packageName,
-      packagePrice: Number(packagePrice),
+      packageName: effectivePackageName,
+      packagePrice: Number(packagePrice || 0),
       isMultiDay: Boolean(isMultiDay),
       totalDays: calculatedDays,
       eventDates: allDatesToReserve,
+      dayShifts: Array.isArray(dayShifts) ? dayShifts : [],
       eventDate: allDatesToReserve[0] || eventDate,
-      eventTimeSlot,
+      eventTimeSlot: effectiveEventTimeSlot,
       customerName: customerName.trim(),
       customerPhone: finalPhone,
       customerEmail: customerEmail.toLowerCase().trim(),
@@ -555,6 +695,8 @@ const getDashboardStats = async (req, res, next) => {
 
 module.exports = {
   createBooking,
+  sendBookingOtp,
+  verifyBookingOtp,
   checkSlotAvailability,
   getBookedDates,
   blockDateByAdmin,

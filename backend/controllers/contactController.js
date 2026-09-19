@@ -45,7 +45,7 @@ const submitContactForm = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: 'Your message has been received! Our team will contact you shortly.',
+      message: 'Your enquiry has been sent directly to the Swastik Photography Admin! Our team will review your message and contact you within 24 hours.',
       data: newContact,
     });
   } catch (error) {

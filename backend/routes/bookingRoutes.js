@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const {
   createBooking,
+  sendBookingOtp,
+  verifyBookingOtp,
   checkSlotAvailability,
   getBookedDates,
   blockDateByAdmin,
@@ -15,6 +17,8 @@ const { protect } = require('../middleware/authMiddleware');
 
 // Public routes
 router.post('/', createBooking);
+router.post('/send-otp', sendBookingOtp);
+router.post('/verify-otp', verifyBookingOtp);
 router.get('/check-availability', checkSlotAvailability);
 router.get('/booked-dates', getBookedDates);
 

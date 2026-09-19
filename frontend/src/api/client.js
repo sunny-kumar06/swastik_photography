@@ -130,6 +130,8 @@ export const reviewsApi = {
 // Bookings endpoints
 export const bookingsApi = {
   create: (data) => api.post('/bookings', data),
+  sendOtp: (phone) => api.post('/bookings/send-otp', { phone }),
+  verifyOtp: (phone, otp) => api.post('/bookings/verify-otp', { phone, otp }),
   checkAvailability: (date) => api.get('/bookings/check-availability', { params: { date } }),
   getBookedDates: (params) => api.get('/bookings/booked-dates', { params }),
   blockDate: (data) => api.post('/bookings/block-date', data),

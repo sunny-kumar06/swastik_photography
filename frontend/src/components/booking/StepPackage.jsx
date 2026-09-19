@@ -103,6 +103,27 @@ const StepPackage = ({ eventType, selectedPackage, onSelect }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (eventType === 'Custom') {
+      const customPkg = {
+        _id: 'custom-event-quote',
+        name: 'Custom Bespoke Quotation',
+        category: 'Custom',
+        price: 0,
+        description: 'Bespoke event package tailored specifically to your custom dates, shifts, and vision.',
+        features: [
+          'Dedicated Cinematographers & Photographers',
+          'Custom Multi-Day & Multi-Shift Coverage',
+          'Cinematic Highlights & High-Resolution Retouching',
+          'Personalized Schedule Tailored to Your Ceremonies',
+        ],
+        isCustom: true,
+      };
+      setPackages([customPkg]);
+      onSelect(customPkg);
+      setLoading(false);
+      return;
+    }
+
     const fetchPackages = async () => {
       try {
         const res = await packagesApi.getAll();
@@ -125,6 +146,9 @@ const StepPackage = ({ eventType, selectedPackage, onSelect }) => {
   }, [eventType]);
 
   const formatPrice = (price) => {
+    if (!price || price === 0) {
+      return 'Quotation on Request';
+    }
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
@@ -139,9 +163,31 @@ const StepPackage = ({ eventType, selectedPackage, onSelect }) => {
           Step 2: Choose Your Package
         </h4>
         <p className="text-xs sm:text-sm text-slate-400 mt-1 font-light">
-          Showing premium curated collections available for <span className="text-brand-accent font-semibold">{eventType}</span>.
+          {eventType === 'Custom'
+            ? 'Custom Event pricing is calculated based on your custom dates & shifts.'
+            : <span>Showing premium curated collections available for <span className="text-brand-accent font-semibold">{eventType}</span>.</span>}
         </p>
       </div>
+
+      {eventType === 'Custom' && (
+        <div className="mb-6 p-4 rounded-2xl bg-amber-950/30 border border-amber-500/50 text-amber-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+          <div>
+            <span className="font-bold text-sm text-white block">Custom Event Quotation Notice</span>
+            <p className="text-amber-300 text-xs mt-0.5">
+              The price will be updated within 24 hours after booking submission, or contact admin directly for an immediate estimate.
+            </p>
+          </div>
+          <a
+            href="https://wa.me/919608782890?text=Hi%20Swastik%20Photography%2C%20I%20would%20like%20a%20custom%20price%20quotation%20for%20my%20event."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider whitespace-nowrap self-start sm:self-auto transition-colors flex items-center space-x-1.5 shadow"
+          >
+            <span>WhatsApp Admin</span>
+            <span>→</span>
+          </a>
+        </div>
+      )}
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

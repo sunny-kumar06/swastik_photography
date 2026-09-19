@@ -45,9 +45,17 @@ const eventOptions = [
     icon: Film,
     image: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=600&auto=format&fit=crop',
   },
+  {
+    id: 'Custom',
+    title: 'Make Your Event (Custom)',
+    desc: 'Design your own custom celebration, multi-ceremony shoot, or tailored package.',
+    icon: Camera,
+    image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=600&auto=format&fit=crop',
+    isSpecial: true,
+  },
 ];
 
-const StepEvent = ({ selectedEvent, onSelect }) => {
+const StepEvent = ({ selectedEvent, onSelect, customEventName, onCustomEventNameChange }) => {
   return (
     <div>
       <div className="text-center mb-8">
@@ -55,7 +63,7 @@ const StepEvent = ({ selectedEvent, onSelect }) => {
           Step 1: Choose Your Celebration
         </h4>
         <p className="text-xs sm:text-sm text-slate-400 mt-1 font-light">
-          Select the type of occasion you want Swastik Photography to document.
+          Select standard ceremony or choose "Make Your Event" to customize your occasion and shifts.
         </p>
       </div>
 
@@ -73,6 +81,8 @@ const StepEvent = ({ selectedEvent, onSelect }) => {
               className={`relative rounded-2xl overflow-hidden p-5 cursor-pointer border transition-all duration-300 flex flex-col justify-between h-52 group ${
                 isSelected
                   ? 'border-brand-accent bg-brand-card shadow-glow-red ring-2 ring-brand-accent/40'
+                  : event.isSpecial
+                  ? 'border-amber-500/40 bg-gradient-to-br from-amber-950/20 to-slate-900/80 hover:border-amber-400'
                   : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
               }`}
             >
@@ -88,17 +98,26 @@ const StepEvent = ({ selectedEvent, onSelect }) => {
                   className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
                     isSelected
                       ? 'bg-brand-accent text-white'
+                      : event.isSpecial
+                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
                       : 'bg-slate-800 text-slate-300 group-hover:text-amber-400'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
 
-                {isSelected && (
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-accent text-white">
-                    Selected
-                  </span>
-                )}
+                <div className="flex items-center space-x-1.5">
+                  {event.isSpecial && (
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      Bespoke
+                    </span>
+                  )}
+                  {isSelected && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-accent text-white">
+                      Selected
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="relative z-10">
@@ -113,6 +132,39 @@ const StepEvent = ({ selectedEvent, onSelect }) => {
           );
         })}
       </div>
+
+      {/* Custom Event Name Input (when user selects 'Make Your Event (Custom)') */}
+      {selectedEvent === 'Custom' && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-6 p-5 sm:p-6 rounded-2xl bg-amber-950/20 border border-amber-500/40 shadow-xl space-y-3 animate-fadeIn"
+        >
+          <div className="flex items-center space-x-2 text-amber-400">
+            <Sparkles className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">
+              Define Your Custom Event
+            </span>
+          </div>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            Specify your celebration name below. You can pick multiple days and shifts in the next steps. Our team will prepare a custom quote updated within 24 hours (or contact admin directly).
+          </p>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider mb-1.5">
+              Custom Event Name *
+            </label>
+            <input
+              type="text"
+              required
+              value={customEventName || ''}
+              onChange={(e) => onCustomEventNameChange(e.target.value)}
+              placeholder="e.g. Silver Jubilee Anniversary, Corporate Gala, Haldi & Sangeet Combo..."
+              className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-amber-500/50 text-white text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all placeholder:text-slate-500"
+            />
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };
