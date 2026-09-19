@@ -104,8 +104,111 @@ const sendCustomerStatusSMS = async (booking) => {
   return await sendSMS({ to: booking.customerPhone, message: text });
 };
 
+/**
+ * Send Security OTP to customer's mobile number via SMS
+ */
+const sendOtpSMS = async ({ phone, otp }) => {
+  const cleanPhone = String(phone).replace(/\D/g, '').slice(-10);
+  const message = `Your Swastik Photography security OTP is: ${otp}. Valid for 10 minutes. For your security, do not share this OTP with anyone.`;
+
+  // 1. Fast2SMS dedicated OTP route
+  if (process.env.FAST2SMS_API_KEY) {
+    try {
+      const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+        method: 'POST',
+        headers: {
+          authorization: process.env.FAST2SMS_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          route: 'otp',
+          variables_values: String(otp),
+          numbers: cleanPhone,
+        }),
+      });
+      const data = await response.json();
+      if (data && (data.return === true || data.status_code === 200)) {
+        console.log(`[Fast2SMS OTP Sent to +91 ${cleanPhone}]:`, data.message || 'Dispatched');
+        return { success: true, provider: 'fast2sms', data };
+      }
+
+      // If OTP route failed, try quick SMS route
+      const fallbackRes = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+        method: 'POST',
+        headers: {
+          authorization: process.env.FAST2SMS_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          route: 'q',
+          message: message,
+          language: 'english',
+          flash: 0,
+          numbers: cleanPhone,
+        }),
+      });
+      const fallbackData = await fallbackRes.json();
+      if (fallbackData && (fallbackData.return === true || fallbackData.status_code === 200)) {
+        console.log(`[Fast2SMS Quick OTP Sent to +91 ${cleanPhone}]:`, fallbackData.message || 'Dispatched');
+        return { success: true, provider: 'fast2sms', data: fallbackData };
+      }
+
+      console.warn(`[Fast2SMS Gateway Error]:`, data.message || fallbackData.message);
+      return { success: false, error: data.message || fallbackData.message || 'Fast2SMS dispatch failed' };
+    } catch (err) {
+      console.error('[Fast2SMS Network Error]:', err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  // 2. Twilio route
+  if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+    try {
+      const authHeader = Buffer.from(
+        `${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`
+      ).toString('base64');
+
+      const params = new URLSearchParams();
+      params.append('To', `+91${cleanPhone}`);
+      params.append('From', process.env.TWILIO_PHONE_NUMBER);
+      params.append('Body', message);
+
+      const twilioRes = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Basic ${authHeader}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: params.toString(),
+        }
+      );
+      const data = await twilioRes.json();
+      if (data.sid) {
+        console.log(`[Twilio OTP SMS Sent to +91 ${cleanPhone}]: SID ${data.sid}`);
+        return { success: true, provider: 'twilio', data };
+      }
+      return { success: false, error: data.message || 'Twilio dispatch failed' };
+    } catch (err) {
+      console.error('[Twilio SMS Error]:', err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  // 3. Fallback preview
+  console.log('\n================== [SMS OTP SECURITY DISPATCH] ==================');
+  console.log(`📱 To: +91 ${cleanPhone}`);
+  console.log(`🔐 OTP Code: ${otp}`);
+  console.log(`💬 Message:\n${message}`);
+  console.log('Notice: Configure active FAST2SMS_API_KEY or TWILIO credentials in .env for live carrier delivery.');
+  console.log('=================================================================\n');
+  return { success: true, simulated: true };
+};
+
 module.exports = {
   sendSMS,
+  sendOtpSMS,
   sendAdminBookingSMS,
   sendCustomerBookingSMS,
   sendCustomerStatusSMS,

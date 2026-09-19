@@ -16,7 +16,6 @@ const StepCustomer = ({ customerData, onChange }) => {
     verifying: false,
     error: '',
     successMsg: '',
-    demoOtp: '',
     countdown: 0,
   });
 
@@ -49,10 +48,9 @@ const StepCustomer = ({ customerData, onChange }) => {
         setOtpState((prev) => ({
           ...prev,
           sent: true,
-          demoOtp: res.data.demoOtp || '',
-          successMsg: `OTP has been sent to +91 ${cleanPhone}.`,
+          successMsg: `Security OTP sent to +91 ${cleanPhone} via SMS. Please check your phone messages.`,
           countdown: 60,
-          otp: res.data.demoOtp ? String(res.data.demoOtp) : '', // Pre-fill in demo mode for frictionless testing
+          otp: '', // Customer must enter the 6-digit code received on mobile
         }));
       }
     } catch (err) {
@@ -109,7 +107,6 @@ const StepCustomer = ({ customerData, onChange }) => {
         verifying: false,
         error: '',
         successMsg: '',
-        demoOtp: '',
         countdown: 0,
       });
     }
@@ -248,13 +245,11 @@ const StepCustomer = ({ customerData, onChange }) => {
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center space-x-1.5 text-amber-400 font-bold">
                     <KeyRound className="w-3.5 h-3.5" />
-                    <span>Enter 6-Digit OTP</span>
+                    <span>Enter 6-Digit SMS OTP</span>
                   </div>
-                  {otpState.demoOtp && (
-                    <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold border border-amber-500/30">
-                      Code: {otpState.demoOtp}
-                    </span>
-                  )}
+                  <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono text-[10px] border border-slate-700">
+                    Check Phone SMS
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-2">

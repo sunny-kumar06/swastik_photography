@@ -10,6 +10,7 @@ const {
   sendAdminBookingSMS,
   sendCustomerBookingSMS,
   sendCustomerStatusSMS,
+  sendOtpSMS,
 } = require('../utils/smsService');
 
 // In-memory OTP storage: phone -> { otp, expiresAt, verified, attempts }
@@ -24,6 +25,7 @@ const otpCleanupTimer = setInterval(() => {
     }
   }
 }, 5 * 60 * 1000);
+
 if (otpCleanupTimer.unref) {
   otpCleanupTimer.unref();
 }
@@ -69,12 +71,15 @@ const sendBookingOtp = async (req, res, next) => {
       attempts: 0,
     });
 
-    console.log(`\n🔑 [MOBILE OTP DISPATCH] Phone: +91 ${finalPhone} | Code: ${otp} (Valid 10 mins)\n`);
+    // Dispatch OTP via SMS to the customer's phone number
+    const smsResult = await sendOtpSMS({ phone: finalPhone, otp });
+
+    console.log(`\n🔑 [MOBILE OTP DISPATCH] Phone: +91 ${finalPhone} | Code: ${otp} (Valid 10 mins) | Carrier Sent: ${smsResult.success}\n`);
 
     res.json({
       success: true,
-      message: `OTP sent successfully to +91 ${finalPhone}. Please enter the 6-digit verification code.`,
-      demoOtp: otp, // For smooth testing & evaluation without SMS gateway friction
+      message: `OTP has been sent to +91 ${finalPhone} via SMS. Please enter the 6-digit code to verify.`,
+      smsDispatched: smsResult.success,
     });
   } catch (error) {
     next(error);
