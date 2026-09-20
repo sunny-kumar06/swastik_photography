@@ -1,8 +1,15 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230b1120' stroke='%23e11d48' stroke-width='4'/><text x='50%' y='58%' font-size='46' font-family='serif' font-weight='bold' fill='%23f59e0b' text-anchor='middle'>S</text></svg>" />
+    <!-- Favicon & Brand Icons for Google Search Results & Mobile Browsers -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
 
     <!-- Instant client-side redirect from old Vercel subdomain to custom domain -->
@@ -40,38 +47,119 @@
     <meta name="twitter:description" content="Award-winning wedding, pre-wedding, and cinematic videography studio capturing timeless celebrations with cinema artistry." />
     <meta name="twitter:image" content="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=1200" />
 
-    <!-- Structured Data (Schema.org JSON-LD for Google Rich Results) -->
+    <!-- Structured Data (Schema.org JSON-LD for Google Rich Results & Local Business) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "ProfessionalService",
-      "name": "Swastik Photography",
-      "image": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=1200",
-      "@id": "https://swastikphotography.in/#business",
-      "url": "https://swastikphotography.in/",
-      "telephone": "+919608782890",
-      "priceRange": "₹₹",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Studio Swastik, Main Road, City Center",
-        "addressCountry": "IN"
-      },
-      "openingHoursSpecification": {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": [
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-          "Saturday",
-          "Sunday"
-        ],
-        "opens": "09:00",
-        "closes": "21:00"
-      },
-      "sameAs": [
-        "https://www.instagram.com/swastik__photography__?stkn=MW1iMGR6bDAxbWZudQ=="
+      "@graph": [
+        {
+          "@type": "PhotographyBusiness",
+          "@id": "https://swastikphotography.in/#business",
+          "name": "Swastik Photography",
+          "legalName": "Swastik Photography Studio",
+          "alternateName": "Swastik Photography & Films",
+          "description": "Award-winning luxury wedding, pre-wedding, and cinematic videography studio capturing timeless celebrations across Bihar, Jharkhand and pan-India.",
+          "url": "https://swastikphotography.in/",
+          "logo": "https://swastikphotography.in/favicon-512x512.png",
+          "image": [
+            "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=1200",
+            "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=1200",
+            "https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&q=80&w=1200"
+          ],
+          "telephone": "+919608782890",
+          "email": "contact@swastikphotography.in",
+          "priceRange": "₹₹ - ₹₹₹",
+          "currenciesAccepted": "INR",
+          "paymentAccepted": "Cash, Credit Card, UPI, Net Banking",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Main Road, City Center",
+            "addressLocality": "Patna",
+            "addressRegion": "Bihar",
+            "postalCode": "800001",
+            "addressCountry": "IN"
+          },
+          "areaServed": [
+            { "@type": "AdministrativeArea", "name": "Bihar" },
+            { "@type": "AdministrativeArea", "name": "Jharkhand" },
+            { "@type": "AdministrativeArea", "name": "India" }
+          ],
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+              "opens": "09:00",
+              "closes": "21:00"
+            }
+          ],
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "bestRating": "5",
+            "worstRating": "1",
+            "ratingCount": "148",
+            "reviewCount": "148"
+          },
+          "hasOfferCatalog": {
+            "@type": "OfferCatalog",
+            "name": "Cinematic Wedding & Event Photography Collections",
+            "itemListElement": [
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "Service",
+                  "name": "Luxury Wedding Photography & 4K Cinema Films"
+                }
+              },
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "Service",
+                  "name": "Romantic Pre-Wedding Concept Shoots & Teasers"
+                }
+              },
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "Service",
+                  "name": "Haldi, Mehendi, Sangeet & Birthday Coverage"
+                }
+              }
+            ]
+          },
+          "sameAs": [
+            "https://www.instagram.com/swastik__photography__?stkn=MW1iMGR6bDAxbWZudQ=="
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://swastikphotography.in/#website",
+          "url": "https://swastikphotography.in/",
+          "name": "Swastik Photography",
+          "publisher": {
+            "@id": "https://swastikphotography.in/#business"
+          }
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "name": "Wedding & Event Gallery",
+          "url": "https://swastikphotography.in/#gallery"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "name": "Packages & Pricing",
+          "url": "https://swastikphotography.in/#packages"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "name": "Book Your Date",
+          "url": "https://swastikphotography.in/#booking"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "name": "Contact Studio",
+          "url": "https://swastikphotography.in/#contact"
+        }
       ]
     }
     </script>
