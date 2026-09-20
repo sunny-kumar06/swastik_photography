@@ -41,6 +41,13 @@ const StepSummary = ({ bookingData, onConfirm, submitting, confirmedResult }) =>
           <p className="text-[11px] text-slate-400 mt-2">
             Please quote this reference ID for any queries or changes.
           </p>
+
+          <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+            <span className="text-slate-300 font-medium">{confirmedResult.packageName}</span>
+            <span className="text-emerald-400 font-bold font-cinematic text-base">
+              {confirmedResult.packagePrice > 0 ? formatPrice(confirmedResult.packagePrice) : 'Quotation on Request'}
+            </span>
+          </div>
         </div>
 
         <div className="text-xs text-slate-400">

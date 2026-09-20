@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
@@ -49,7 +49,7 @@ router.get('/', async (req, res, next) => {
       return pObj;
     });
 
-    res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
+    res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=60');
     res.json({
       success: true,
       data: {

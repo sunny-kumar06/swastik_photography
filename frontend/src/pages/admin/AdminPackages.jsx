@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit3, Trash2, CheckCircle2, AlertCircle, Sparkles, X } from 'lucide-react';
 import { packagesApi } from '../../api/client';
+import { clearCachedData } from '../../utils/cache';
 
 const categories = ['Wedding', 'Pre-Wedding', 'Birthday', 'Engagement', 'Portrait', 'Cinematic', 'General'];
 
@@ -78,6 +79,7 @@ const AdminPackages = () => {
     if (!window.confirm('Are you sure you want to delete this package?')) return;
     try {
       await packagesApi.delete(id);
+      clearCachedData('packages_list');
       setStatusMsg({ type: 'success', text: 'Package deleted successfully.' });
       fetchPackages();
     } catch (err) {
@@ -88,6 +90,7 @@ const AdminPackages = () => {
   const handleToggleStatus = async (pkg) => {
     try {
       await packagesApi.update(pkg._id, { isActive: !pkg.isActive });
+      clearCachedData('packages_list');
       fetchPackages();
     } catch (err) {
       setStatusMsg({ type: 'error', text: 'Failed to update package status.' });
@@ -119,6 +122,7 @@ const AdminPackages = () => {
         await packagesApi.create(data);
         setStatusMsg({ type: 'success', text: 'Package created successfully!' });
       }
+      clearCachedData('packages_list');
       setModalOpen(false);
       fetchPackages();
     } catch (err) {

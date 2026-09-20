@@ -131,13 +131,36 @@ const StepPackage = ({ eventType, selectedPackage, onSelect }) => {
         const matching = allPkgs.filter(
           (p) => p.category?.toLowerCase() === (eventType || 'Wedding').toLowerCase()
         );
-        setPackages(matching.length > 0 ? matching : allPkgs);
+        const activeList = matching.length > 0 ? matching : allPkgs;
+        setPackages(activeList);
+
+        // Auto-sync selectedPackage with fresh price & priceUnit from database
+        if (selectedPackage && activeList.length > 0) {
+          const currentPkg = activeList.find(
+            (p) => (selectedPackage._id && p._id === selectedPackage._id) ||
+                   (p.name && selectedPackage.name && p.name.toLowerCase() === selectedPackage.name.toLowerCase())
+          );
+          if (currentPkg) {
+            onSelect(currentPkg);
+          }
+        }
       } catch (err) {
         console.warn('[Booking packages fetch warning, using defaults]:', err.message);
         const matching = defaultFallbackPackages.filter(
           (p) => p.category.toLowerCase() === (eventType || 'Wedding').toLowerCase()
         );
-        setPackages(matching.length > 0 ? matching : defaultFallbackPackages);
+        const activeList = matching.length > 0 ? matching : defaultFallbackPackages;
+        setPackages(activeList);
+
+        if (selectedPackage && activeList.length > 0) {
+          const currentPkg = activeList.find(
+            (p) => (selectedPackage._id && p._id === selectedPackage._id) ||
+                   (p.name && selectedPackage.name && p.name.toLowerCase() === selectedPackage.name.toLowerCase())
+          );
+          if (currentPkg) {
+            onSelect(currentPkg);
+          }
+        }
       } finally {
         setLoading(false);
       }

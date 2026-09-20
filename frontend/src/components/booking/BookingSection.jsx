@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { ChevronRight, ChevronLeft, Calendar, AlertCircle } from 'lucide-react';
@@ -8,6 +8,7 @@ import StepDateTime from './StepDateTime';
 import StepCustomer from './StepCustomer';
 import StepSummary from './StepSummary';
 import { bookingsApi } from '../../api/client';
+import { useAppData } from '../../context/AppDataContext';
 import { sanitizePhoneNumber, isValidPhoneNumber, isValidEmail } from '../../utils/validation';
 
 const stepLabels = ['Event', 'Package', 'Date & Time', 'Details', 'Confirm'];
@@ -41,6 +42,68 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
   const [submitting, setSubmitting] = useState(false);
   const [confirmedResult, setConfirmedResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+
+  let appData;
+  try {
+    appData = useAppData();
+  } catch {
+    appData = null;
+  }
+
+  // Synchronize when a package or event is preselected from homepage
+  useEffect(() => {
+    if (preselectedPackage) {
+      setBookingData((prev) => ({
+        ...prev,
+        eventType: preselectedPackage.category || prev.eventType,
+        isCustomEvent: false,
+        packageId: preselectedPackage._id,
+        packageName: preselectedPackage.name,
+        packagePrice: preselectedPackage.price,
+        basePackagePrice: preselectedPackage.price,
+        packagePriceUnit: preselectedPackage.priceUnit || 'fixed',
+      }));
+    } else if (preselectedEvent) {
+      setBookingData((prev) => ({
+        ...prev,
+        eventType: preselectedEvent,
+        isCustomEvent: preselectedEvent === 'Custom',
+        packagePrice: preselectedEvent === 'Custom' ? 0 : prev.packagePrice,
+        packageName: preselectedEvent === 'Custom' ? 'Custom Bespoke Quotation' : prev.packageName,
+      }));
+    }
+  }, [preselectedPackage, preselectedEvent]);
+
+  // Synchronize with real-time package updates from central AppDataContext
+  useEffect(() => {
+    if (appData?.packages?.length > 0) {
+      setBookingData((prev) => {
+        if (prev.isCustomEvent) return prev;
+        const matched = appData.packages.find(
+          (p) =>
+            (prev.packageId && p._id === prev.packageId) ||
+            (p.name && prev.packageName && p.name.toLowerCase() === prev.packageName.toLowerCase())
+        );
+        if (matched) {
+          const unit = matched.priceUnit || 'fixed';
+          const basePrice = matched.price;
+          const finalPrice =
+            prev.isMultiDay && unit === 'per_day'
+              ? basePrice * (prev.totalDays || 1)
+              : basePrice;
+          return {
+            ...prev,
+            packageId: matched._id,
+            packageName: matched.name,
+            basePackagePrice: basePrice,
+            packagePriceUnit: unit,
+            packagePrice: finalPrice,
+          };
+        }
+        return prev;
+      });
+    }
+  }, [appData?.packages]);
 
   const handleDataChange = (field, value) => {
     setBookingData((prev) => {
@@ -305,24 +368,38 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
                   onChangeMultiDayMode={(isMulti) => {
                     const basePrice = bookingData.basePackagePrice || bookingData.packagePrice;
                     const days = isMulti ? Math.max(bookingData.eventDates?.length || 3, 2) : 1;
+                    const unit = bookingData.packagePriceUnit || 'fixed';
+                    const finalPrice = bookingData.isCustomEvent
+                      ? 0
+                      : isMulti && unit === 'per_day'
+                      ? basePrice * days
+                      : basePrice;
+
                     setBookingData((p) => ({
                       ...p,
                       isMultiDay: isMulti,
                       totalDays: days,
                       basePackagePrice: basePrice,
-                      packagePrice: p.isCustomEvent ? 0 : (isMulti ? basePrice * days : basePrice),
+                      packagePrice: finalPrice,
                       eventTimeSlot: isMulti ? 'Multi-Shift Schedule' : p.eventTimeSlot,
                     }));
                   }}
                   onChangeDates={(dates) => {
-                    const basePrice = bookingData.basePackagePrice || (bookingData.isMultiDay ? bookingData.packagePrice / (bookingData.totalDays || 1) : bookingData.packagePrice);
+                    const basePrice = bookingData.basePackagePrice || bookingData.packagePrice;
                     const days = Math.max(dates.length, 1);
+                    const unit = bookingData.packagePriceUnit || 'fixed';
+                    const finalPrice = bookingData.isCustomEvent
+                      ? 0
+                      : bookingData.isMultiDay && unit === 'per_day'
+                      ? basePrice * days
+                      : basePrice;
+
                     setBookingData((p) => ({
                       ...p,
                       eventDates: dates,
                       totalDays: days,
                       basePackagePrice: basePrice,
-                      packagePrice: p.isCustomEvent ? 0 : (p.isMultiDay ? basePrice * days : basePrice),
+                      packagePrice: finalPrice,
                     }));
                   }}
                   onChangeDayShifts={(shifts) =>

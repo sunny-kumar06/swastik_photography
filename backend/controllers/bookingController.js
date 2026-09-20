@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Booking = require('../models/Booking');
+const Package = require('../models/Package');
 const Gallery = require('../models/Gallery');
 const Contact = require('../models/Contact');
 const {
@@ -312,6 +313,29 @@ const createBooking = async (req, res, next) => {
         ? packageId
         : null;
 
+    // Determine authoritative package price from database
+    let authoritativePrice = Number(packagePrice || 0);
+    if (!isCustomEvent) {
+      try {
+        let dbPkg = null;
+        if (validPackageId) {
+          dbPkg = await Package.findById(validPackageId);
+        }
+        if (!dbPkg && packageName) {
+          dbPkg = await Package.findOne({ name: packageName });
+        }
+        if (dbPkg) {
+          if (isMultiDay && dbPkg.priceUnit === 'per_day') {
+            authoritativePrice = dbPkg.price * calculatedDays;
+          } else {
+            authoritativePrice = dbPkg.price;
+          }
+        }
+      } catch (pkgErr) {
+        console.warn('[Authoritative package price warn]:', pkgErr.message);
+      }
+    }
+
     const newBooking = await Booking.create({
       bookingReference,
       eventType: isCustomEvent ? 'Custom Event' : eventType,
@@ -321,7 +345,7 @@ const createBooking = async (req, res, next) => {
       isEmailVerified: Boolean(isEmailVerified || isPhoneVerified),
       packageId: validPackageId,
       packageName: effectivePackageName,
-      packagePrice: Number(packagePrice || 0),
+      packagePrice: authoritativePrice,
       isMultiDay: Boolean(isMultiDay),
       totalDays: calculatedDays,
       eventDates: allDatesToReserve,
