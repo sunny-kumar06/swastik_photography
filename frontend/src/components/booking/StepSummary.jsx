@@ -89,7 +89,12 @@ const StepSummary = ({ bookingData, onConfirm, submitting, confirmedResult }) =>
                 ? 'Pending Quote'
                 : formatPrice(bookingData.packagePrice)}
             </div>
-            <span className="text-xs text-slate-400 block">{bookingData.packageName}</span>
+            <span className="text-xs text-slate-400 block">
+              {bookingData.packageName}
+              {bookingData.packagePriceUnit && bookingData.packagePriceUnit !== 'fixed' && !bookingData.isCustomEvent
+                ? ` (${bookingData.packagePriceUnit === 'per_day' ? 'Per Day Rate' : 'Hourly Rate'})`
+                : ''}
+            </span>
           </div>
         </div>
 

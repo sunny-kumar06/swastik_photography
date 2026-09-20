@@ -17,6 +17,11 @@ const packageSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Package price is required'],
     },
+    priceUnit: {
+      type: String,
+      enum: ['fixed', 'per_day', 'per_hour'],
+      default: 'fixed',
+    },
     description: {
       type: String,
       required: [true, 'Description is required'],

@@ -23,6 +23,7 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
     packageName: preselectedPackage?.name || 'Wedding Premium',
     packagePrice: preselectedPackage?.price || 25000,
     basePackagePrice: preselectedPackage?.price || 25000,
+    packagePriceUnit: preselectedPackage?.priceUnit || 'fixed',
     isMultiDay: false,
     totalDays: 1,
     eventDates: [],
@@ -287,6 +288,7 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
                       packageName: pkg.name,
                       packagePrice: pkg.price,
                       basePackagePrice: pkg.price,
+                      packagePriceUnit: pkg.priceUnit || 'fixed',
                     }))
                   }
                 />

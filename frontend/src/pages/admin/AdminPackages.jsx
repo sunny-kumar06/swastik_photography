@@ -16,6 +16,7 @@ const AdminPackages = () => {
     name: '',
     category: 'Wedding',
     price: '',
+    priceUnit: 'fixed',
     description: '',
     features: '',
     deliveryDays: 15,
@@ -47,6 +48,7 @@ const AdminPackages = () => {
       name: '',
       category: 'Wedding',
       price: '',
+      priceUnit: 'fixed',
       description: '',
       features: '',
       deliveryDays: 15,
@@ -62,6 +64,7 @@ const AdminPackages = () => {
       name: pkg.name || '',
       category: pkg.category || 'Wedding',
       price: pkg.price || '',
+      priceUnit: pkg.priceUnit || 'fixed',
       description: pkg.description || '',
       features: (pkg.features || []).join('\n'),
       deliveryDays: pkg.deliveryDays || 15,
@@ -100,6 +103,7 @@ const AdminPackages = () => {
       name: form.name,
       category: form.category,
       price: Number(form.price),
+      priceUnit: form.priceUnit || 'fixed',
       description: form.description,
       features: form.features,
       deliveryDays: Number(form.deliveryDays),
@@ -124,12 +128,16 @@ const AdminPackages = () => {
     }
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-IN', {
+  const formatPrice = (price, priceUnit = 'fixed') => {
+    const formatted = new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
       maximumFractionDigits: 0,
     }).format(price || 0);
+
+    if (priceUnit === 'per_day') return `${formatted} / Day`;
+    if (priceUnit === 'per_hour') return `${formatted} / Hr`;
+    return formatted;
   };
 
   return (
@@ -210,8 +218,17 @@ const AdminPackages = () => {
                 </div>
 
                 <h4 className="text-xl font-cinematic font-bold text-white">{pkg.name}</h4>
-                <div className="text-2xl font-cinematic font-extrabold text-emerald-400 mt-2 mb-3">
-                  {formatPrice(pkg.price)}
+                <div className="flex items-baseline flex-wrap gap-2 mt-2 mb-3">
+                  <span className="text-2xl font-cinematic font-extrabold text-emerald-400">
+                    {formatPrice(pkg.price, pkg.priceUnit)}
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-amber-300 border border-slate-700">
+                    {pkg.priceUnit === 'per_day'
+                      ? 'Per Day'
+                      : pkg.priceUnit === 'per_hour'
+                      ? 'Per Hour'
+                      : 'Fixed Package'}
+                  </span>
                 </div>
 
                 <p className="text-xs text-slate-400 mb-4 line-clamp-2">{pkg.description}</p>
@@ -284,7 +301,7 @@ const AdminPackages = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1">Category *</label>
                   <select
@@ -307,8 +324,22 @@ const AdminPackages = () => {
                     required
                     value={form.price}
                     onChange={(e) => setForm({ ...form, price: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono"
+                    placeholder="e.g. 25000"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Pricing Basis *</label>
+                  <select
+                    value={form.priceUnit}
+                    onChange={(e) => setForm({ ...form, priceUnit: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-amber-300 text-xs font-semibold"
+                  >
+                    <option value="fixed">Fixed / Total Package</option>
+                    <option value="per_day">Per Day (Daily Rate)</option>
+                    <option value="per_hour">Per Hour (Hourly Rate)</option>
+                  </select>
                 </div>
               </div>
 

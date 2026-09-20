@@ -214,10 +214,23 @@ const PackagesSection = ({ onSelectPackageForBooking }) => {
                   </p>
 
                   <div className="mt-6 mb-8 pb-6 border-b border-slate-800">
-                    <span className="text-3xl sm:text-4xl font-extrabold text-white font-cinematic">
-                      {formatPrice(pkg.price)}
+                    <div className="flex items-baseline space-x-2">
+                      <span className="text-3xl sm:text-4xl font-extrabold text-white font-cinematic">
+                        {formatPrice(pkg.price)}
+                      </span>
+                      {pkg.priceUnit && pkg.priceUnit !== 'fixed' && (
+                        <span className="text-sm font-semibold text-amber-400 uppercase tracking-wider">
+                          {pkg.priceUnit === 'per_day' ? '/ Day' : '/ Hour'}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-slate-400 block mt-1">
+                      {pkg.priceUnit === 'per_day'
+                        ? 'Daily coverage rate • Multi-day adaptable'
+                        : pkg.priceUnit === 'per_hour'
+                        ? 'Hourly coverage rate • Shoot on demand'
+                        : 'All inclusive • Customized deliverables'}
                     </span>
-                    <span className="text-xs text-slate-400 block mt-1">all inclusive / customized deliverables</span>
                   </div>
 
                   {/* Feature list */}

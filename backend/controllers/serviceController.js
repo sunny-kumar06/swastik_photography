@@ -47,8 +47,8 @@ const createService = async (req, res, next) => {
       }
     }
 
-    if (!title || !description || startingPrice === undefined) {
-      return res.status(400).json({ success: false, message: 'Title, description, and starting price are required' });
+    if (!title || !description) {
+      return res.status(400).json({ success: false, message: 'Title and description are required' });
     }
 
     let parsedFeatures = [];
@@ -61,7 +61,7 @@ const createService = async (req, res, next) => {
     const service = await Service.create({
       title: title.trim(),
       description: description.trim(),
-      startingPrice: Number(startingPrice),
+      startingPrice: startingPrice !== undefined && startingPrice !== null && startingPrice !== '' ? Number(startingPrice) : 0,
       image,
       cloudinaryId,
       category: category || 'Photography',
@@ -94,7 +94,9 @@ const updateService = async (req, res, next) => {
 
     if (title) service.title = title.trim();
     if (description) service.description = description.trim();
-    if (startingPrice !== undefined) service.startingPrice = Number(startingPrice);
+    if (startingPrice !== undefined && startingPrice !== null && startingPrice !== '') {
+      service.startingPrice = Number(startingPrice);
+    }
     if (category) service.category = category;
     if (isActive !== undefined) service.isActive = isActive === true || isActive === 'true';
     if (order !== undefined) service.order = Number(order);

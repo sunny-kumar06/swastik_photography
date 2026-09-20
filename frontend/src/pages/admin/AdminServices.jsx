@@ -14,7 +14,6 @@ const AdminServices = () => {
   const [form, setForm] = useState({
     title: '',
     description: '',
-    startingPrice: '',
     category: 'Photography',
     features: '',
     customImage: '',
@@ -44,7 +43,6 @@ const AdminServices = () => {
     setForm({
       title: '',
       description: '',
-      startingPrice: '',
       category: 'Photography',
       features: '',
       customImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1200&auto=format&fit=crop',
@@ -58,7 +56,6 @@ const AdminServices = () => {
     setForm({
       title: srv.title || '',
       description: srv.description || '',
-      startingPrice: srv.startingPrice || '',
       category: srv.category || 'Photography',
       features: (srv.features || []).join(', '),
       customImage: srv.image || '',
@@ -95,7 +92,6 @@ const AdminServices = () => {
     const data = {
       title: form.title,
       description: form.description,
-      startingPrice: Number(form.startingPrice),
       category: form.category,
       features: form.features,
       customImage: form.customImage,
@@ -212,9 +208,6 @@ const AdminServices = () => {
                 <div>
                   <h4 className="text-base font-cinematic font-bold text-white">{srv.title}</h4>
                   <p className="text-xs text-slate-400 mt-1 line-clamp-2 font-light">{srv.description}</p>
-                  <div className="mt-3 text-lg font-bold text-emerald-400 font-cinematic">
-                    From {formatPrice(srv.startingPrice)}
-                  </div>
                 </div>
 
                 <div className="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between">
@@ -282,26 +275,15 @@ const AdminServices = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Starting Price (₹) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={form.startingPrice}
-                    onChange={(e) => setForm({ ...form, startingPrice: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Category</label>
-                  <input
-                    type="text"
-                    value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs"
-                  />
-                </div>
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Category</label>
+                <input
+                  type="text"
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs"
+                  placeholder="e.g. Photography, Videography, Drone Cinema"
+                />
               </div>
 
               <div>

@@ -172,20 +172,17 @@ const ServicesSection = ({ onSelectServiceForBooking }) => {
                     )}
                   </div>
 
-                  {/* Price & Action */}
+                  {/* Action */}
                   <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] uppercase tracking-wider text-slate-400 block">Starting from</span>
-                      <span className="text-lg font-bold text-white font-cinematic">
-                        {formatPrice(service.startingPrice)}
-                      </span>
-                    </div>
+                    <span className="text-xs text-amber-400 font-medium">
+                      Bespoke Studio Coverage
+                    </span>
 
                     <button
                       onClick={() => handleServiceBook(service)}
                       className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-brand-accent text-white text-xs font-bold uppercase tracking-wider transition-colors duration-300 group-hover:shadow-glow-red"
                     >
-                      <span>Book Now</span>
+                      <span>Book Service</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>

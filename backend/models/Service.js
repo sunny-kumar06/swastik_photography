@@ -14,7 +14,8 @@ const serviceSchema = new mongoose.Schema(
     },
     startingPrice: {
       type: Number,
-      required: [true, 'Starting price is required'],
+      required: false,
+      default: 0,
     },
     image: {
       type: String,

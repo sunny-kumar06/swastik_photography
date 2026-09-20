@@ -235,10 +235,23 @@ const StepPackage = ({ eventType, selectedPackage, onSelect }) => {
                   </p>
 
                   <div className="my-5 pb-5 border-b border-slate-800">
-                    <span className="text-2xl sm:text-3xl font-bold text-white font-cinematic">
-                      {formatPrice(pkg.price)}
+                    <div className="flex items-baseline space-x-1.5">
+                      <span className="text-2xl sm:text-3xl font-bold text-white font-cinematic">
+                        {formatPrice(pkg.price)}
+                      </span>
+                      {pkg.priceUnit && pkg.priceUnit !== 'fixed' && !pkg.isCustom && (
+                        <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">
+                          {pkg.priceUnit === 'per_day' ? '/ Day' : '/ Hour'}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-slate-400 block mt-0.5">
+                      {pkg.priceUnit === 'per_day'
+                        ? 'Daily Studio Investment'
+                        : pkg.priceUnit === 'per_hour'
+                        ? 'Hourly Studio Investment'
+                        : 'Estimated Studio Investment'}
                     </span>
-                    <span className="text-[11px] text-slate-400 block mt-0.5">Estimated Studio Investment</span>
                   </div>
 
                   {/* Feature Checklist */}
