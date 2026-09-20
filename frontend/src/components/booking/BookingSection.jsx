@@ -50,7 +50,7 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
     appData = null;
   }
 
-  // Synchronize when a package or event is preselected from homepage
+  // Synchronize when a package or event is preselected from homepage (e.g. Signature Services)
   useEffect(() => {
     if (preselectedPackage) {
       setBookingData((prev) => ({
@@ -64,26 +64,78 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
         packagePriceUnit: preselectedPackage.priceUnit || 'fixed',
       }));
     } else if (preselectedEvent) {
-      setBookingData((prev) => ({
-        ...prev,
-        eventType: preselectedEvent,
-        isCustomEvent: preselectedEvent === 'Custom',
-        packagePrice: preselectedEvent === 'Custom' ? 0 : prev.packagePrice,
-        packageName: preselectedEvent === 'Custom' ? 'Custom Bespoke Quotation' : prev.packageName,
-      }));
+      const isCustom = preselectedEvent === 'Custom';
+      let matchingPkg = null;
+      if (!isCustom && appData?.packages?.length > 0) {
+        const catPkgs = appData.packages.filter(
+          (p) => p.category?.toLowerCase() === preselectedEvent.toLowerCase()
+        );
+        matchingPkg = catPkgs.find((p) => p.isPopular) || catPkgs[0];
+      }
+
+      setBookingData((prev) => {
+        if (isCustom) {
+          return {
+            ...prev,
+            eventType: 'Custom',
+            isCustomEvent: true,
+            packageId: null,
+            packageName: 'Custom Bespoke Quotation',
+            packagePrice: 0,
+            basePackagePrice: 0,
+            packagePriceUnit: 'fixed',
+          };
+        }
+        if (matchingPkg) {
+          const unit = matchingPkg.priceUnit || 'fixed';
+          const basePrice = matchingPkg.price;
+          const finalPrice =
+            prev.isMultiDay && unit === 'per_day'
+              ? basePrice * (prev.totalDays || 1)
+              : basePrice;
+          return {
+            ...prev,
+            eventType: preselectedEvent,
+            isCustomEvent: false,
+            packageId: matchingPkg._id,
+            packageName: matchingPkg.name,
+            packagePrice: finalPrice,
+            basePackagePrice: basePrice,
+            packagePriceUnit: unit,
+          };
+        }
+        return {
+          ...prev,
+          eventType: preselectedEvent,
+          isCustomEvent: false,
+        };
+      });
     }
-  }, [preselectedPackage, preselectedEvent]);
+  }, [preselectedPackage, preselectedEvent, appData?.packages]);
 
   // Synchronize with real-time package updates from central AppDataContext
   useEffect(() => {
     if (appData?.packages?.length > 0) {
       setBookingData((prev) => {
         if (prev.isCustomEvent) return prev;
-        const matched = appData.packages.find(
+
+        // Try to find currently selected package first
+        let matched = appData.packages.find(
           (p) =>
             (prev.packageId && p._id === prev.packageId) ||
             (p.name && prev.packageName && p.name.toLowerCase() === prev.packageName.toLowerCase())
         );
+
+        // If current package doesn't match current event category, find category's package
+        if (!matched || (matched.category?.toLowerCase() !== (prev.eventType || 'wedding').toLowerCase())) {
+          const catPkgs = appData.packages.filter(
+            (p) => p.category?.toLowerCase() === (prev.eventType || 'wedding').toLowerCase()
+          );
+          if (catPkgs.length > 0) {
+            matched = catPkgs.find((p) => p.isPopular) || catPkgs[0];
+          }
+        }
+
         if (matched) {
           const unit = matched.priceUnit || 'fixed';
           const basePrice = matched.price;
@@ -103,7 +155,7 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
         return prev;
       });
     }
-  }, [appData?.packages]);
+  }, [appData?.packages, bookingData.eventType]);
 
   const handleDataChange = (field, value) => {
     setBookingData((prev) => {
@@ -320,15 +372,54 @@ const BookingSection = ({ preselectedEvent, preselectedPackage }) => {
               {currentStep === 1 && (
                 <StepEvent
                   selectedEvent={bookingData.eventType}
-                  onSelect={(ev) =>
-                    setBookingData((p) => ({
-                      ...p,
-                      eventType: ev,
-                      isCustomEvent: ev === 'Custom',
-                      packagePrice: ev === 'Custom' ? 0 : p.packagePrice,
-                      packageName: ev === 'Custom' ? 'Custom Bespoke Quotation' : p.packageName,
-                    }))
-                  }
+                  onSelect={(ev) => {
+                    const isCustom = ev === 'Custom';
+                    let matchingPkg = null;
+                    if (!isCustom && appData?.packages?.length > 0) {
+                      const catPkgs = appData.packages.filter(
+                        (p) => p.category?.toLowerCase() === ev.toLowerCase()
+                      );
+                      matchingPkg = catPkgs.find((p) => p.isPopular) || catPkgs[0];
+                    }
+
+                    setBookingData((p) => {
+                      if (isCustom) {
+                        return {
+                          ...p,
+                          eventType: 'Custom',
+                          isCustomEvent: true,
+                          packageId: null,
+                          packageName: 'Custom Bespoke Quotation',
+                          packagePrice: 0,
+                          basePackagePrice: 0,
+                          packagePriceUnit: 'fixed',
+                        };
+                      }
+                      if (matchingPkg) {
+                        const unit = matchingPkg.priceUnit || 'fixed';
+                        const basePrice = matchingPkg.price;
+                        const finalPrice =
+                          p.isMultiDay && unit === 'per_day'
+                            ? basePrice * (p.totalDays || 1)
+                            : basePrice;
+                        return {
+                          ...p,
+                          eventType: ev,
+                          isCustomEvent: false,
+                          packageId: matchingPkg._id,
+                          packageName: matchingPkg.name,
+                          packagePrice: finalPrice,
+                          basePackagePrice: basePrice,
+                          packagePriceUnit: unit,
+                        };
+                      }
+                      return {
+                        ...p,
+                        eventType: ev,
+                        isCustomEvent: false,
+                      };
+                    });
+                  }}
                   customEventName={bookingData.customEventName}
                   onCustomEventNameChange={(name) =>
                     setBookingData((p) => ({ ...p, customEventName: name }))

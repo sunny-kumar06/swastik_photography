@@ -26,6 +26,7 @@ const HomePage = () => {
   };
 
   const handleSelectServiceForBooking = (service) => {
+    setSelectedPackageForBooking(null);
     setSelectedEventForBooking(service.category || 'Wedding');
     scrollToBooking();
   };

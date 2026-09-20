@@ -135,13 +135,18 @@ const StepPackage = ({ eventType, selectedPackage, onSelect }) => {
         setPackages(activeList);
 
         // Auto-sync selectedPackage with fresh price & priceUnit from database
-        if (selectedPackage && activeList.length > 0) {
+        if (activeList.length > 0 && eventType !== 'Custom') {
           const currentPkg = activeList.find(
-            (p) => (selectedPackage._id && p._id === selectedPackage._id) ||
-                   (p.name && selectedPackage.name && p.name.toLowerCase() === selectedPackage.name.toLowerCase())
+            (p) => (selectedPackage?._id && p._id === selectedPackage._id) ||
+                   (p.name && selectedPackage?.name && p.name.toLowerCase() === selectedPackage.name.toLowerCase())
           );
           if (currentPkg) {
             onSelect(currentPkg);
+          } else {
+            const fallbackPkg = activeList.find((p) => p.isPopular) || activeList[0];
+            if (fallbackPkg) {
+              onSelect(fallbackPkg);
+            }
           }
         }
       } catch (err) {
@@ -152,13 +157,18 @@ const StepPackage = ({ eventType, selectedPackage, onSelect }) => {
         const activeList = matching.length > 0 ? matching : defaultFallbackPackages;
         setPackages(activeList);
 
-        if (selectedPackage && activeList.length > 0) {
+        if (activeList.length > 0 && eventType !== 'Custom') {
           const currentPkg = activeList.find(
-            (p) => (selectedPackage._id && p._id === selectedPackage._id) ||
-                   (p.name && selectedPackage.name && p.name.toLowerCase() === selectedPackage.name.toLowerCase())
+            (p) => (selectedPackage?._id && p._id === selectedPackage._id) ||
+                   (p.name && selectedPackage?.name && p.name.toLowerCase() === selectedPackage.name.toLowerCase())
           );
           if (currentPkg) {
             onSelect(currentPkg);
+          } else {
+            const fallbackPkg = activeList.find((p) => p.isPopular) || activeList[0];
+            if (fallbackPkg) {
+              onSelect(fallbackPkg);
+            }
           }
         }
       } finally {
